@@ -8,7 +8,7 @@ string "``0``".
 Also see :doc:`True <True>`.
 
 +----------------+---------------------------------------------------------------------+
-| Applies to     | :ref:`property or method<validation-property-target>`               |
+| Applies to     | :ref:`property or method <validation-property-target>`              |
 +----------------+---------------------------------------------------------------------+
 | Options        | - `message`_                                                        |
 +----------------+---------------------------------------------------------------------+
@@ -41,33 +41,70 @@ method returns **false**:
 
     .. code-block:: yaml
 
-        # src/BlogBundle/Resources/config/validation.yml
+        # src/Acme/BlogBundle/Resources/config/validation.yml
         Acme\BlogBundle\Entity\Author
             getters:
                 stateInvalid:
-                    - "False":
+                    - 'False':
                         message: You've entered an invalid state.
 
     .. code-block:: php-annotations
 
         // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+
         use Symfony\Component\Validator\Constraints as Assert;
 
         class Author
         {
             /**
-             * @Assert\False()
+             * @Assert\False(
+             *     message = "You've entered an invalid state."
+             * )
              */
-             public function isStateInvalid($message = "You've entered an invalid state.")
+             public function isStateInvalid()
              {
                 // ...
              }
         }
 
+    .. code-block:: xml
+
+        <!-- src/Acme/BlogBundle/Resources/config/validation.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <constraint-mapping xmlns="http://symfony.com/schema/dic/constraint-mapping"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/constraint-mapping http://symfony.com/schema/dic/constraint-mapping/constraint-mapping-1.0.xsd">
+
+            <class name="Acme\BlogBundle\Entity\Author">
+                <getter property="stateInvalid">
+                    <constraint name="False">
+                        <option name="message">You've entered an invalid state.</option>
+                    </constraint>
+                </getter>
+            </class>
+        </constraint-mapping>
+
+    .. code-block:: php
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Author
+        {
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addGetterConstraint('stateInvalid', new Assert\False());
+            }
+        }
+
 .. caution::
 
-    When using YAML, be sure to surround ``False`` with quotes (``"False"``)
-    or else YAML will convert this into a Boolean value.
+    When using YAML, be sure to surround ``False`` with quotes (``'False'``)
+    or else YAML will convert this into a ``false`` Boolean value.
 
 Options
 -------
@@ -75,6 +112,6 @@ Options
 message
 ~~~~~~~
 
-**type**: ``string`` **default**: ``This value should be false``
+**type**: ``string`` **default**: ``This value should be false.``
 
 This message is shown if the underlying data is not false.

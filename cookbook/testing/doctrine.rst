@@ -1,7 +1,7 @@
 .. index::
    single: Tests; Doctrine
 
-How to test Doctrine Repositories
+How to Test Doctrine Repositories
 =================================
 
 Unit testing Doctrine repositories in a Symfony project is not recommended.
@@ -17,36 +17,49 @@ Functional Testing
 ------------------
 
 If you need to actually execute a query, you will need to boot the kernel
-to get a valid connection. In this case, you'll extend the ``WebTestCase``,
+to get a valid connection. In this case, you'll extend the ``KernelTestCase``,
 which makes all of this quite easy::
 
     // src/Acme/StoreBundle/Tests/Entity/ProductRepositoryFunctionalTest.php
     namespace Acme\StoreBundle\Tests\Entity;
 
-    use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+    use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
-    class ProductRepositoryFunctionalTest extends WebTestCase
+    class ProductRepositoryFunctionalTest extends KernelTestCase
     {
         /**
          * @var \Doctrine\ORM\EntityManager
          */
         private $em;
 
+        /**
+         * {@inheritDoc}
+         */
         public function setUp()
         {
-            $kernel = static::createKernel();
-            $kernel->boot();
-            $this->em = $kernel->getContainer()->get('doctrine.orm.entity_manager');
+            self::bootKernel();
+            $this->em = static::$kernel->getContainer()
+                ->get('doctrine')
+                ->getManager()
+            ;
         }
 
-        public function testProductByCategoryName()
+        public function testSearchByCategoryName()
         {
-            $results = $this->em
+            $products = $this->em
                 ->getRepository('AcmeStoreBundle:Product')
-                ->searchProductsByNameQuery('foo')
-                ->getResult()
+                ->searchByCategoryName('foo')
             ;
 
-            $this->assertCount(1, $results);
+            $this->assertCount(1, $products);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        protected function tearDown()
+        {
+            parent::tearDown();
+            $this->em->close();
         }
     }

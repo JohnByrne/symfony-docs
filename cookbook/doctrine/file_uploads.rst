@@ -1,20 +1,19 @@
 .. index::
    single: Doctrine; File uploads
 
-
-How to handle File Uploads with Doctrine
+How to Handle File Uploads with Doctrine
 ========================================
 
 Handling file uploads with Doctrine entities is no different than handling
 any other file upload. In other words, you're free to move the file in your
 controller after handling a form submission. For examples of how to do this,
-see the :doc:`file type reference</reference/forms/types/file>` page.
+see the :doc:`file type reference </reference/forms/types/file>` page.
 
 If you choose to, you can also integrate the file upload into your entity
 lifecycle (i.e. creation, update and removal). In this case, as your entity
 is created, updated, and removed from Doctrine, the file uploading and removal
 processing will take place automatically (without needing to do anything in
-your controller);
+your controller).
 
 To make this work, you'll need to take care of a number of details, which
 will be covered in this cookbook entry.
@@ -22,10 +21,10 @@ will be covered in this cookbook entry.
 Basic Setup
 -----------
 
-First, create a simple Doctrine Entity class to work with::
+First, create a simple Doctrine entity class to work with::
 
-    // src/Acme/DemoBundle/Entity/Document.php
-    namespace Acme\DemoBundle\Entity;
+    // src/AppBundle/Entity/Document.php
+    namespace AppBundle\Entity;
 
     use Doctrine\ORM\Mapping as ORM;
     use Symfony\Component\Validator\Constraints as Assert;
@@ -55,23 +54,29 @@ First, create a simple Doctrine Entity class to work with::
 
         public function getAbsolutePath()
         {
-            return null === $this->path ? null : $this->getUploadRootDir().'/'.$this->path;
+            return null === $this->path
+                ? null
+                : $this->getUploadRootDir().'/'.$this->path;
         }
 
         public function getWebPath()
         {
-            return null === $this->path ? null : $this->getUploadDir().'/'.$this->path;
+            return null === $this->path
+                ? null
+                : $this->getUploadDir().'/'.$this->path;
         }
 
         protected function getUploadRootDir()
         {
-            // the absolute directory path where uploaded documents should be saved
+            // the absolute directory path where uploaded
+            // documents should be saved
             return __DIR__.'/../../../../web/'.$this->getUploadDir();
         }
 
         protected function getUploadDir()
         {
-            // get rid of the __DIR__ so it doesn't screw when displaying uploaded doc/image in the view.
+            // get rid of the __DIR__ so it doesn't screw up
+            // when displaying uploaded doc/image in the view.
             return 'uploads/documents';
         }
     }
@@ -86,14 +91,14 @@ file.
 .. tip::
 
     If you have not done so already, you should probably read the
-    :doc:`file</reference/forms/types/file>` type documentation first to
+    :doc:`file </reference/forms/types/file>` type documentation first to
     understand how the basic upload process works.
 
 .. note::
 
     If you're using annotations to specify your validation rules (as shown
     in this example), be sure that you've enabled validation by annotation
-    (see :ref:`validation configuration<book-validation-configuration>`).
+    (see :ref:`validation configuration <book-validation-configuration>`).
 
 To handle the actual file upload in the form, use a "virtual" ``file`` field.
 For example, if you're building your form directly in a controller, it might
@@ -114,7 +119,7 @@ look like this::
 Next, create this property on your ``Document`` class and add some validation
 rules::
 
-    // src/Acme/DemoBundle/Entity/Document.php
+    use Symfony\Component\HttpFoundation\File\UploadedFile;
 
     // ...
     class Document
@@ -122,63 +127,128 @@ rules::
         /**
          * @Assert\File(maxSize="6000000")
          */
-        public $file;
+        private $file;
+
+        /**
+         * Sets file.
+         *
+         * @param UploadedFile $file
+         */
+        public function setFile(UploadedFile $file = null)
+        {
+            $this->file = $file;
+        }
+
+        /**
+         * Get file.
+         *
+         * @return UploadedFile
+         */
+        public function getFile()
+        {
+            return $this->file;
+        }
+    }
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/AppBundle/Resources/config/validation.yml
+        AppBundle\Entity\Document:
+            properties:
+                file:
+                    - File:
+                        maxSize: 6000000
+
+    .. code-block:: php-annotations
+
+        // src/AppBundle/Entity/Document.php
+        namespace AppBundle\Entity;
 
         // ...
-    }
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Document
+        {
+            /**
+             * @Assert\File(maxSize="6000000")
+             */
+            private $file;
+
+            // ...
+        }
+
+    .. code-block:: xml
+
+        <!-- src/AppBundle/Resources/config/validation.xml -->
+        <class name="AppBundle\Entity\Document">
+            <property name="file">
+                <constraint name="File">
+                    <option name="maxSize">6000000</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php
+
+        // src/AppBundle/Entity/Document.php
+        namespace Acme\DemoBundle\Entity;
+
+        // ...
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Document
+        {
+            // ...
+
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('file', new Assert\File(array(
+                    'maxSize' => 6000000,
+                )));
+            }
+        }
 
 .. note::
 
-    As you are using the ``File`` constraint, Symfony2 will automatically guess
+    As you are using the ``File`` constraint, Symfony will automatically guess
     that the form field is a file upload input. That's why you did not have
     to set it explicitly when creating the form above (``->add('file')``).
 
 The following controller shows you how to handle the entire process::
 
-    use Acme\DemoBundle\Entity\Document;
+    // ...
+    use AppBundle\Entity\Document;
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+    use Symfony\Component\HttpFoundation\Request;
     // ...
 
     /**
      * @Template()
      */
-    public function uploadAction()
+    public function uploadAction(Request $request)
     {
         $document = new Document();
         $form = $this->createFormBuilder($document)
             ->add('name')
             ->add('file')
-            ->getForm()
-        ;
+            ->getForm();
 
-        if ($this->getRequest()->getMethod() === 'POST') {
-            $form->bind($this->getRequest());
-            if ($form->isValid()) {
-                $em = $this->getDoctrine()->getManager();
+        $form->handleRequest($request);
 
-                $em->persist($document);
-                $em->flush();
+        if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
 
-                $this->redirect($this->generateUrl(...));
-            }
+            $em->persist($document);
+            $em->flush();
+
+            return $this->redirect($this->generateUrl(...));
         }
 
         return array('form' => $form->createView());
     }
-
-.. note::
-
-    When writing the template, don't forget to set the ``enctype`` attribute:
-
-    .. code-block:: html+php
-
-        <h1>Upload File</h1>
-
-        <form action="#" method="post" {{ form_enctype(form) }}>
-            {{ form_widget(form) }}
-
-            <input type="submit" value="Upload Document" />
-        </form>
 
 The previous controller will automatically persist the ``Document`` entity
 with the submitted name, but it will do nothing about the file and the ``path``
@@ -197,7 +267,7 @@ in a moment to handle the file upload::
         $em->persist($document);
         $em->flush();
 
-        $this->redirect(...);
+        return $this->redirect(...);
     }
 
 The ``upload()`` method will take advantage of the :class:`Symfony\\Component\\HttpFoundation\\File\\UploadedFile`
@@ -206,18 +276,22 @@ object, which is what's returned after a ``file`` field is submitted::
     public function upload()
     {
         // the file property can be empty if the field is not required
-        if (null === $this->file) {
+        if (null === $this->getFile()) {
             return;
         }
 
-        // we use the original file name here but you should
+        // use the original file name here but you should
         // sanitize it at least to avoid any security issues
-        
-        // move takes the target directory and then the target filename to move to
-        $this->file->move($this->getUploadRootDir(), $this->file->getClientOriginalName());
 
-        // set the path property to the filename where you'ved saved the file
-        $this->path = $this->file->getClientOriginalName();
+        // move takes the target directory and then the
+        // target filename to move to
+        $this->getFile()->move(
+            $this->getUploadRootDir(),
+            $this->getFile()->getClientOriginalName()
+        );
+
+        // set the path property to the filename where you've saved the file
+        $this->path = $this->getFile()->getClientOriginalName();
 
         // clean up the file property as you won't need it anymore
         $this->file = null;
@@ -225,6 +299,15 @@ object, which is what's returned after a ``file`` field is submitted::
 
 Using Lifecycle Callbacks
 -------------------------
+
+.. caution::
+
+    Using lifecycle callbacks is a limited technique that has some drawbacks.
+    If you want to remove the hardcoded ``__DIR__`` reference inside
+    the ``Document::getUploadRootDir()`` method, the best way is to start
+    using explicit :doc:`doctrine listeners </cookbook/doctrine/event_listeners_subscribers>`.
+    There you will be able to inject kernel parameters such as ``kernel.root_dir``
+    to be able to build absolute paths.
 
 Even if this implementation works, it suffers from a major flaw: What if there
 is a problem when the entity is persisted? The file would have already moved
@@ -258,15 +341,36 @@ Next, refactor the ``Document`` class to take advantage of these callbacks::
      */
     class Document
     {
+        private $temp;
+
+        /**
+         * Sets file.
+         *
+         * @param UploadedFile $file
+         */
+        public function setFile(UploadedFile $file = null)
+        {
+            $this->file = $file;
+            // check if we have an old image path
+            if (isset($this->path)) {
+                // store the old name to delete after the update
+                $this->temp = $this->path;
+                $this->path = null;
+            } else {
+                $this->path = 'initial';
+            }
+        }
+
         /**
          * @ORM\PrePersist()
          * @ORM\PreUpdate()
          */
         public function preUpload()
         {
-            if (null !== $this->file) {
+            if (null !== $this->getFile()) {
                 // do whatever you want to generate a unique name
-                $this->path = uniqid().'.'.$this->file->guessExtension();
+                $filename = sha1(uniqid(mt_rand(), true));
+                $this->path = $filename.'.'.$this->getFile()->guessExtension();
             }
         }
 
@@ -276,16 +380,23 @@ Next, refactor the ``Document`` class to take advantage of these callbacks::
          */
         public function upload()
         {
-            if (null === $this->file) {
+            if (null === $this->getFile()) {
                 return;
             }
 
             // if there is an error when moving the file, an exception will
             // be automatically thrown by move(). This will properly prevent
             // the entity from being persisted to the database on error
-            $this->file->move($this->getUploadRootDir(), $this->path);
+            $this->getFile()->move($this->getUploadRootDir(), $this->path);
 
-            unset($this->file);
+            // check if we have an old image
+            if (isset($this->temp)) {
+                // delete the old image
+                unlink($this->getUploadRootDir().'/'.$this->temp);
+                // clear the temp image path
+                $this->temp = null;
+            }
+            $this->file = null;
         }
 
         /**
@@ -293,11 +404,20 @@ Next, refactor the ``Document`` class to take advantage of these callbacks::
          */
         public function removeUpload()
         {
-            if ($file = $this->getAbsolutePath()) {
+            $file = $this->getAbsolutePath();
+            if ($file) {
                 unlink($file);
             }
         }
     }
+
+.. caution::
+
+   If changes to your entity are handled by a Doctrine event listener or event
+   subscriber, the ``preUpdate()`` callback must notify Doctrine about the changes
+   being done.
+   For full reference on preUpdate event restrictions, see `preUpdate`_ in the
+   Doctrine Events documentation.
 
 The class now does everything you need: it generates a unique filename before
 persisting, moves the file after persisting, and removes the file if the
@@ -312,7 +432,7 @@ call to ``$document->upload()`` should be removed from the controller::
         $em->persist($document);
         $em->flush();
 
-        $this->redirect(...);
+        return $this->redirect(...);
     }
 
 .. note::
@@ -325,13 +445,13 @@ call to ``$document->upload()`` should be removed from the controller::
 .. caution::
 
     The ``PreUpdate`` and ``PostUpdate`` callbacks are only triggered if there
-    is a change in one of the entity's field that are persisted. This means
+    is a change in one of the entity's fields that are persisted. This means
     that, by default, if you modify only the ``$file`` property, these events
     will not be triggered, as the property itself is not directly persisted
     via Doctrine. One solution would be to use an ``updated`` field that's
     persisted to Doctrine, and to modify it manually when changing the file.
 
-Using the ``id`` as the filename
+Using the ``id`` as the Filename
 --------------------------------
 
 If you want to use the ``id`` as the name of the file, the implementation is
@@ -346,8 +466,24 @@ property, instead of the actual filename::
      */
     class Document
     {
-        // a property used temporarily while deleting
-        private $filenameForRemove;
+        private $temp;
+
+        /**
+         * Sets file.
+         *
+         * @param UploadedFile $file
+         */
+        public function setFile(UploadedFile $file = null)
+        {
+            $this->file = $file;
+            // check if we have an old image path
+            if (is_file($this->getAbsolutePath())) {
+                // store the old name to delete after the update
+                $this->temp = $this->getAbsolutePath();
+            } else {
+                $this->path = 'initial';
+            }
+        }
 
         /**
          * @ORM\PrePersist()
@@ -355,8 +491,8 @@ property, instead of the actual filename::
          */
         public function preUpload()
         {
-            if (null !== $this->file) {
-                $this->path = $this->file->guessExtension();
+            if (null !== $this->getFile()) {
+                $this->path = $this->getFile()->guessExtension();
             }
         }
 
@@ -366,16 +502,27 @@ property, instead of the actual filename::
          */
         public function upload()
         {
-            if (null === $this->file) {
+            if (null === $this->getFile()) {
                 return;
+            }
+
+            // check if we have an old image
+            if (isset($this->temp)) {
+                // delete the old image
+                unlink($this->temp);
+                // clear the temp image path
+                $this->temp = null;
             }
 
             // you must throw an exception here if the file cannot be moved
             // so that the entity is not persisted to the database
             // which the UploadedFile move() method does
-            $this->file->move($this->getUploadRootDir(), $this->id.'.'.$this->file->guessExtension());
+            $this->getFile()->move(
+                $this->getUploadRootDir(),
+                $this->id.'.'.$this->getFile()->guessExtension()
+            );
 
-            unset($this->file);
+            $this->setFile(null);
         }
 
         /**
@@ -383,7 +530,7 @@ property, instead of the actual filename::
          */
         public function storeFilenameForRemove()
         {
-            $this->filenameForRemove = $this->getAbsolutePath();
+            $this->temp = $this->getAbsolutePath();
         }
 
         /**
@@ -391,14 +538,16 @@ property, instead of the actual filename::
          */
         public function removeUpload()
         {
-            if ($this->filenameForRemove) {
-                unlink($this->filenameForRemove);
+            if (isset($this->temp)) {
+                unlink($this->temp);
             }
         }
 
         public function getAbsolutePath()
         {
-            return null === $this->path ? null : $this->getUploadRootDir().'/'.$this->id.'.'.$this->path;
+            return null === $this->path
+                ? null
+                : $this->getUploadRootDir().'/'.$this->id.'.'.$this->path;
         }
     }
 
@@ -406,3 +555,5 @@ You'll notice in this case that you need to do a little bit more work in
 order to remove the file. Before it's removed, you must store the file path
 (since it depends on the id). Then, once the object has been fully removed
 from the database, you can safely delete the file (in ``PostRemove``).
+
+.. _`preUpdate`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html#preupdate

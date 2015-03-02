@@ -9,12 +9,19 @@ The ``file`` type represents a file input in your form.
 +-------------+---------------------------------------------------------------------+
 | Rendered as | ``input`` ``file`` field                                            |
 +-------------+---------------------------------------------------------------------+
-| Inherited   | - `required`_                                                       |
-| options     | - `label`_                                                          |
-|             | - `read_only`_                                                      |
-|             | - `error_bubbling`_                                                 |
+| Options     | - `multiple`_                                                       |
 +-------------+---------------------------------------------------------------------+
-| Parent type | :doc:`form</reference/forms/types/field>`                           |
+| Inherited   | - `disabled`_                                                       |
+| options     | - `empty_data`_                                                     |
+|             | - `error_bubbling`_                                                 |
+|             | - `error_mapping`_                                                  |
+|             | - `label`_                                                          |
+|             | - `label_attr`_                                                     |
+|             | - `mapped`_                                                         |
+|             | - `read_only`_                                                      |
+|             | - `required`_                                                       |
++-------------+---------------------------------------------------------------------+
+| Parent type | :doc:`form </reference/forms/types/form>`                           |
 +-------------+---------------------------------------------------------------------+
 | Class       | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\FileType`  |
 +-------------+---------------------------------------------------------------------+
@@ -22,16 +29,11 @@ The ``file`` type represents a file input in your form.
 Basic Usage
 -----------
 
-Let's say you have this form definition:
+Say you have this form definition:
 
 .. code-block:: php
 
     $builder->add('attachment', 'file');
-
-.. caution::
-
-    Don't forget to add the ``enctype`` attribute in the form tag: ``<form
-    action="#" method="post" {{ form_enctype(form) }}>``.
 
 When the form is submitted, the ``attachment`` field will be an instance of
 :class:`Symfony\\Component\\HttpFoundation\\File\\UploadedFile`. It can be
@@ -47,7 +49,7 @@ used to move the ``attachment`` file to a permanent location:
 
         if ($form->isValid()) {
             $someNewFilename = ...
-        
+
             $form['attachment']->getData()->move($dir, $someNewFilename);
 
             // ...
@@ -78,15 +80,50 @@ before using it directly.
 Read the :doc:`cookbook </cookbook/doctrine/file_uploads>` for an example of
 how to manage a file upload associated with a Doctrine entity.
 
-Inherited options
+Field Options
+-------------
+
+multiple
+~~~~~~~~
+
+**type**: ``Boolean`` **default**: ``false``
+
+When set to true, the user will be able to upload multiple files at the same time.
+
+Inherited Options
 -----------------
 
-These options inherit from the :doc:`field</reference/forms/types/field>` type:
+These options inherit from the :doc:`form </reference/forms/types/form>` type:
 
-.. include:: /reference/forms/types/options/required.rst.inc
+.. include:: /reference/forms/types/options/disabled.rst.inc
+
+.. include:: /reference/forms/types/options/empty_data.rst.inc
+    :end-before: DEFAULT_PLACEHOLDER
+
+The default value is ``null``.
+
+.. include:: /reference/forms/types/options/empty_data.rst.inc
+    :start-after: DEFAULT_PLACEHOLDER
+
+.. include:: /reference/forms/types/options/error_bubbling.rst.inc
+
+.. include:: /reference/forms/types/options/error_mapping.rst.inc
 
 .. include:: /reference/forms/types/options/label.rst.inc
 
+.. include:: /reference/forms/types/options/label_attr.rst.inc
+
+.. include:: /reference/forms/types/options/mapped.rst.inc
+
 .. include:: /reference/forms/types/options/read_only.rst.inc
 
-.. include:: /reference/forms/types/options/error_bubbling.rst.inc
+.. include:: /reference/forms/types/options/required.rst.inc
+
+Form Variables
+--------------
+
+========  ==========  ===============================================================================
+Variable  Type        Usage
+========  ==========  ===============================================================================
+type      ``string``  The type variable is set to ``file``, in order to render as a file input field.
+========  ==========  ===============================================================================

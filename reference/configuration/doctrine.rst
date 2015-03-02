@@ -1,9 +1,12 @@
 .. index::
-   single: Doctrine; ORM configuration reference
-   single: Configuration reference; Doctrine ORM
+    single: Doctrine; ORM configuration reference
+    single: Configuration reference; Doctrine ORM
 
-Configuration Reference
-=======================
+DoctrineBundle Configuration ("doctrine")
+=========================================
+
+Full Default Configuration
+--------------------------
 
 .. configuration-block::
 
@@ -18,11 +21,11 @@ Configuration Reference
                     some_custom_type:
                         class:                Acme\HelloBundle\MyCustomType
                         commented:            true
+                # If enabled all tables not prefixed with sf2_ will be ignored by the schema
+                # tool. This is for custom tables which should not be altered automatically.
+                #schema_filter:        ^sf2_
 
                 connections:
-                    default:
-                        dbname:               database
-
                     # A collection of different named connections (e.g. default, conn2, etc)
                     default:
                         dbname:               ~
@@ -40,7 +43,7 @@ Configuration Reference
                         # True to use as persistent connection for the ibm_db2 driver
                         persistent:           ~
 
-                        # The protocol to use for the ibm_db2 driver (default to TCPIP if ommited)
+                        # The protocol to use for the ibm_db2 driver (default to TCPIP if omitted)
                         protocol:             ~
 
                         # True to use dbname as service name instead of SID for Oracle
@@ -56,8 +59,10 @@ Configuration Reference
                         MultipleActiveResultSets:  ~
                         driver:               pdo_mysql
                         platform_service:     ~
-                        logging:              %kernel.debug%
-                        profiling:            %kernel.debug%
+
+                        # when true, queries are logged to a "doctrine" monolog channel
+                        logging:              "%kernel.debug%"
+                        profiling:            "%kernel.debug%"
                         driver_class:         ~
                         wrapper_class:        ~
                         options:
@@ -85,7 +90,7 @@ Configuration Reference
                                 # True to use as persistent connection for the ibm_db2 driver
                                 persistent:           ~
 
-                                # The protocol to use for the ibm_db2 driver (default to TCPIP if ommited)
+                                # The protocol to use for the ibm_db2 driver (default to TCPIP if omitted)
                                 protocol:             ~
 
                                 # True to use dbname as service name instead of SID for Oracle
@@ -103,7 +108,7 @@ Configuration Reference
             orm:
                 default_entity_manager:  ~
                 auto_generate_proxy_classes:  false
-                proxy_dir:            %kernel.cache_dir%/doctrine/orm/Proxies
+                proxy_dir:            "%kernel.cache_dir%/doctrine/orm/Proxies"
                 proxy_namespace:      Proxies
                 # search for the "ResolveTargetEntityListener" class for a cookbook about this
                 resolve_target_entities: []
@@ -170,11 +175,14 @@ Configuration Reference
 
     .. code-block:: xml
 
+        <?xml version="1.0" encoding="UTF-8" ?>
         <container xmlns="http://symfony.com/schema/dic/services"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:doctrine="http://symfony.com/schema/dic/doctrine"
-            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd
-                                http://symfony.com/schema/dic/doctrine http://symfony.com/schema/dic/doctrine/doctrine-1.0.xsd">
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                http://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/doctrine
+                http://symfony.com/schema/dic/doctrine/doctrine-1.0.xsd">
 
             <doctrine:config>
                 <doctrine:dbal default-connection="default">
@@ -202,16 +210,44 @@ Configuration Reference
                     <doctrine:type name="custom">Acme\HelloBundle\MyCustomType</doctrine:type>
                 </doctrine:dbal>
 
-                <doctrine:orm default-entity-manager="default" auto-generate-proxy-classes="false" proxy-namespace="Proxies" proxy-dir="%kernel.cache_dir%/doctrine/orm/Proxies">
-                    <doctrine:entity-manager name="default" query-cache-driver="array" result-cache-driver="array" connection="conn1" class-metadata-factory-name="Doctrine\ORM\Mapping\ClassMetadataFactory">
-                        <doctrine:metadata-cache-driver type="memcache" host="localhost" port="11211" instance-class="Memcache" class="Doctrine\Common\Cache\MemcacheCache" />
+                <doctrine:orm
+                    default-entity-manager="default"
+                    auto-generate-proxy-classes="false"
+                    proxy-namespace="Proxies"
+                    proxy-dir="%kernel.cache_dir%/doctrine/orm/Proxies"
+                >
+                    <doctrine:entity-manager
+                        name="default"
+                        query-cache-driver="array"
+                        result-cache-driver="array"
+                        connection="conn1"
+                        class-metadata-factory-name="Doctrine\ORM\Mapping\ClassMetadataFactory"
+                    >
+                        <doctrine:metadata-cache-driver
+                            type="memcache"
+                            host="localhost"
+                            port="11211"
+                            instance-class="Memcache"
+                            class="Doctrine\Common\Cache\MemcacheCache"
+                        />
+
                         <doctrine:mapping name="AcmeHelloBundle" />
+
                         <doctrine:dql>
-                            <doctrine:string-function name="test_string>Acme\HelloBundle\DQL\StringFunction</doctrine:string-function>
-                            <doctrine:numeric-function name="test_numeric>Acme\HelloBundle\DQL\NumericFunction</doctrine:numeric-function>
-                            <doctrine:datetime-function name="test_datetime>Acme\HelloBundle\DQL\DatetimeFunction</doctrine:datetime-function>
+                            <doctrine:string-function name="test_string">
+                                Acme\HelloBundle\DQL\StringFunction
+                            </doctrine:string-function>
+
+                            <doctrine:numeric-function name="test_numeric">
+                                Acme\HelloBundle\DQL\NumericFunction
+                            </doctrine:numeric-function>
+
+                            <doctrine:datetime-function name="test_datetime">
+                                Acme\HelloBundle\DQL\DatetimeFunction
+                            </doctrine:datetime-function>
                         </doctrine:dql>
                     </doctrine:entity-manager>
+
                     <doctrine:entity-manager name="em2" connection="conn2" metadata-cache-driver="apc">
                         <doctrine:mapping
                             name="DoctrineExtensions"
@@ -228,8 +264,8 @@ Configuration Reference
 Configuration Overview
 ----------------------
 
-This following configuration example shows all the configuration defaults that
-the ORM resolves to:
+This following configuration example shows all the configuration defaults
+that the ORM resolves to:
 
 .. code-block:: yaml
 
@@ -239,7 +275,7 @@ the ORM resolves to:
             # the standard distribution overrides this to be true in debug, false otherwise
             auto_generate_proxy_classes: false
             proxy_namespace: Proxies
-            proxy_dir: %kernel.cache_dir%/doctrine/orm/Proxies
+            proxy_dir: "%kernel.cache_dir%/doctrine/orm/Proxies"
             default_entity_manager: default
             metadata_cache_driver: array
             query_cache_driver: array
@@ -251,8 +287,8 @@ certain classes, but those are for very advanced use-cases only.
 Caching Drivers
 ~~~~~~~~~~~~~~~
 
-For the caching drivers you can specify the values "array", "apc", "memcache", "memcached", 
-"xcache" or "service".
+For the caching drivers you can specify the values "array", "apc", "memcache",
+"memcached", "xcache" or "service".
 
 The following example shows an overview of the caching configurations:
 
@@ -275,34 +311,48 @@ Mapping Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
 Explicit definition of all the mapped entities is the only necessary
-configuration for the ORM and there are several configuration options that you
-can control. The following configuration options exist for a mapping:
+configuration for the ORM and there are several configuration options that
+you can control. The following configuration options exist for a mapping:
 
-* ``type`` One of ``annotation``, ``xml``, ``yml``, ``php`` or ``staticphp``.
-  This specifies which type of metadata type your mapping uses.
+type
+....
 
-* ``dir`` Path to the mapping or entity files (depending on the driver). If
-  this path is relative it is assumed to be relative to the bundle root. This
-  only works if the name of your mapping is a bundle name. If you want to use
-  this option to specify absolute paths you should prefix the path with the
-  kernel parameters that exist in the DIC (for example %kernel.root_dir%).
+One of ``annotation``, ``xml``, ``yml``, ``php`` or ``staticphp``. This specifies
+which type of metadata type your mapping uses.
 
-* ``prefix`` A common namespace prefix that all entities of this mapping
-  share. This prefix should never conflict with prefixes of other defined
-  mappings otherwise some of your entities cannot be found by Doctrine. This
-  option defaults to the bundle namespace + ``Entity``, for example for an
-  application bundle called ``AcmeHelloBundle`` prefix would be
-  ``Acme\HelloBundle\Entity``.
+dir
+...
 
-* ``alias`` Doctrine offers a way to alias entity namespaces to simpler,
-  shorter names to be used in DQL queries or for Repository access. When using
-  a bundle the alias defaults to the bundle name.
+Path to the mapping or entity files (depending on the driver). If this path
+is relative it is assumed to be relative to the bundle root. This only works
+if the name of your mapping is a bundle name. If you want to use this option
+to specify absolute paths you should prefix the path with the kernel parameters
+that exist in the DIC (for example ``%kernel.root_dir%``).
 
-* ``is_bundle`` This option is a derived value from ``dir`` and by default is
-  set to true if dir is relative proved by a ``file_exists()`` check that
-  returns false. It is false if the existence check returns true. In this case
-  an absolute path was specified and the metadata files are most likely in a
-  directory outside of a bundle.
+prefix
+......
+
+A common namespace prefix that all entities of this mapping share. This prefix
+should never conflict with prefixes of other defined mappings otherwise some
+of your entities cannot be found by Doctrine. This option defaults to the
+bundle namespace + ``Entity``, for example for an application bundle called
+AcmeHelloBundle prefix would be ``Acme\HelloBundle\Entity``.
+
+alias
+.....
+
+Doctrine offers a way to alias entity namespaces to simpler, shorter names
+to be used in DQL queries or for Repository access. When using a bundle the
+alias defaults to the bundle name.
+
+is_bundle
+.........
+
+This option is a derived value from ``dir`` and by default is set to ``true``
+if dir is relative proved by a ``file_exists()`` check that returns ``false``.
+It is ``false`` if the existence check returns ``true``. In this case an
+absolute path was specified and the metadata files are most likely in a directory
+outside of a bundle.
 
 .. index::
     single: Configuration; Doctrine DBAL
@@ -313,14 +363,10 @@ can control. The following configuration options exist for a mapping:
 Doctrine DBAL Configuration
 ---------------------------
 
-.. note::
-
-    DoctrineBundle supports all parameters that default Doctrine drivers
-    accept, converted to the XML or YAML naming standards that Symfony
-    enforces. See the Doctrine `DBAL documentation`_ for more information.
-
-Besides default Doctrine options, there are some Symfony-related ones that you
-can configure. The following block shows all possible configuration keys:
+DoctrineBundle supports all parameters that default Doctrine drivers
+accept, converted to the XML or YAML naming standards that Symfony
+enforces. See the Doctrine `DBAL documentation`_ for more information.
+The following block shows all possible configuration keys:
 
 .. configuration-block::
 
@@ -334,49 +380,62 @@ can configure. The following block shows all possible configuration keys:
                 user:                 user
                 password:             secret
                 driver:               pdo_mysql
+                # the DBAL driverClass option
                 driver_class:         MyNamespace\MyDriverImpl
+                # the DBAL driverOptions option
                 options:
                     foo: bar
-                path:                 %kernel.data_dir%/data.sqlite
+                path:                 "%kernel.data_dir%/data.sqlite"
                 memory:               true
                 unix_socket:          /tmp/mysql.sock
+                # the DBAL wrapperClass option
                 wrapper_class:        MyDoctrineDbalConnectionWrapper
                 charset:              UTF8
-                logging:              %kernel.debug%
+                logging:              "%kernel.debug%"
                 platform_service:     MyOwnDatabasePlatformService
                 mapping_types:
                     enum: string
                 types:
                     custom: Acme\HelloBundle\MyCustomType
+                # the DBAL keepSlave option
+                keep_slave:           false
 
     .. code-block:: xml
 
-        <!-- xmlns:doctrine="http://symfony.com/schema/dic/doctrine" -->
-        <!-- xsi:schemaLocation="http://symfony.com/schema/dic/doctrine http://symfony.com/schema/dic/doctrine/doctrine-1.0.xsd"> -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:doctrine="http://symfony.com/schema/dic/doctrine"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services
+                http://symfony.com/schema/dic/services/services-1.0.xsd
+                http://symfony.com/schema/dic/doctrine
+                http://symfony.com/schema/dic/doctrine/doctrine-1.0.xsd"
+        >
 
-        <doctrine:config>
-            <doctrine:dbal
-                name="default"
-                dbname="database"
-                host="localhost"
-                port="1234"
-                user="user"
-                password="secret"
-                driver="pdo_mysql"
-                driver-class="MyNamespace\MyDriverImpl"
-                path="%kernel.data_dir%/data.sqlite"
-                memory="true"
-                unix-socket="/tmp/mysql.sock"
-                wrapper-class="MyDoctrineDbalConnectionWrapper"
-                charset="UTF8"
-                logging="%kernel.debug%"
-                platform-service="MyOwnDatabasePlatformService"
-            >
-                <doctrine:option key="foo">bar</doctrine:option>
-                <doctrine:mapping-type name="enum">string</doctrine:mapping-type>
-                <doctrine:type name="custom">Acme\HelloBundle\MyCustomType</doctrine:type>
-            </doctrine:dbal>
-        </doctrine:config>
+            <doctrine:config>
+                <doctrine:dbal
+                    name="default"
+                    dbname="database"
+                    host="localhost"
+                    port="1234"
+                    user="user"
+                    password="secret"
+                    driver="pdo_mysql"
+                    driver-class="MyNamespace\MyDriverImpl"
+                    path="%kernel.data_dir%/data.sqlite"
+                    memory="true"
+                    unix-socket="/tmp/mysql.sock"
+                    wrapper-class="MyDoctrineDbalConnectionWrapper"
+                    charset="UTF8"
+                    logging="%kernel.debug%"
+                    platform-service="MyOwnDatabasePlatformService">
+
+                    <doctrine:option key="foo">bar</doctrine:option>
+                    <doctrine:mapping-type name="enum">string</doctrine:mapping-type>
+                    <doctrine:type name="custom">Acme\HelloBundle\MyCustomType</doctrine:type>
+                </doctrine:dbal>
+            </doctrine:config>
+        </container>
 
 If you want to configure multiple connections in YAML, put them under the
 ``connections`` key and give them a unique name:
@@ -388,7 +447,7 @@ If you want to configure multiple connections in YAML, put them under the
             default_connection:       default
             connections:
                 default:
-                    dbname:           Symfony2
+                    dbname:           Symfony
                     user:             root
                     password:         null
                     host:             localhost
@@ -403,6 +462,41 @@ which is the first one defined or the one configured via the
 ``default_connection`` parameter.
 
 Each connection is also accessible via the ``doctrine.dbal.[name]_connection``
-service where ``[name]`` if the name of the connection.
+service where ``[name]`` is the name of the connection.
 
-.. _DBAL documentation: http://docs.doctrine-project.org/projects/doctrine-dbal/en/latest/index.html
+.. _DBAL documentation: http://docs.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/configuration.html
+
+Shortened Configuration Syntax
+------------------------------
+
+When you are only using one entity manager, all config options available
+can be placed directly under ``doctrine.orm`` config level.
+
+.. code-block:: yaml
+
+    doctrine:
+        orm:
+            # ...
+            query_cache_driver:
+               # ...
+            metadata_cache_driver:
+                # ...
+            result_cache_driver:
+                # ...
+            connection: ~
+            class_metadata_factory_name:  Doctrine\ORM\Mapping\ClassMetadataFactory
+            default_repository_class:  Doctrine\ORM\EntityRepository
+            auto_mapping: false
+            hydrators:
+                # ...
+            mappings:
+                # ...
+            dql:
+                # ...
+            filters:
+                # ...
+
+This shortened version is commonly used in other documentation sections.
+Keep in mind that you can't use both syntaxes at the same time.
+
+.. _`DQL User Defined Functions`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/cookbook/dql-user-defined-functions.html

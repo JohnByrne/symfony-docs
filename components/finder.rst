@@ -1,20 +1,20 @@
 .. index::
    single: Finder
+   single: Components; Finder
 
 The Finder Component
 ====================
 
-   The Finder Component finds files and directories via an intuitive fluent
+   The Finder component finds files and directories via an intuitive fluent
    interface.
 
 Installation
 ------------
 
-You can install the component in many different ways:
+You can install the component in 2 different ways:
 
-* Use the official Git repository (https://github.com/symfony/Finder);
-* Install it via PEAR ( `pear.symfony.com/Finder`);
-* Install it via Composer (`symfony/finder` on Packagist).
+* :doc:`Install it via Composer </components/using_components>` (``symfony/finder`` on `Packagist`_);
+* Use the official Git repository (https://github.com/symfony/Finder).
 
 Usage
 -----
@@ -48,13 +48,26 @@ the Finder instance.
 
 .. tip::
 
-    A Finder instance is a PHP `Iterator`_. So, instead of iterating over the
+    A Finder instance is a PHP :phpclass:`Iterator`. So, instead of iterating over the
     Finder with ``foreach``, you can also convert it to an array with the
     :phpfunction:`iterator_to_array` method, or get the number of items with
     :phpfunction:`iterator_count`.
 
+.. caution::
+
+    When searching through multiple locations passed to the
+    :method:`Symfony\\Component\\Finder\\Finder::in` method, a separate iterator
+    is created internally for every location. This means we have multiple result
+    sets aggregated into one.
+    Since :phpfunction:`iterator_to_array` uses keys of result sets by default,
+    when converting to an array, some keys might be duplicated and their values
+    overwritten. This can be avoided by passing ``false`` as a second parameter
+    to :phpfunction:`iterator_to_array`.
+
 Criteria
 --------
+
+There are lots of ways to filter and sort your results.
 
 Location
 ~~~~~~~~
@@ -69,10 +82,24 @@ Search in several locations by chaining calls to
 
     $finder->files()->in(__DIR__)->in('/elsewhere');
 
+Use wildcard characters to search in the directories matching a pattern::
+
+    $finder->in('src/Symfony/*/*/Resources');
+
+Each pattern has to resolve to at least one directory path.
+
 Exclude directories from matching with the
 :method:`Symfony\\Component\\Finder\\Finder::exclude` method::
 
     $finder->in(__DIR__)->exclude('ruby');
+
+.. versionadded:: 2.3
+   The :method:`Symfony\\Component\\Finder\\Finder::ignoreUnreadableDirs`
+   method was introduced in Symfony 2.3.
+
+It's also possible to ignore directories that you don't have permission to read::
+
+    $finder->ignoreUnreadableDirs()->in(__DIR__);
 
 As the Finder uses PHP iterators, you can pass any URL with a supported
 `protocol`_::
@@ -99,7 +126,7 @@ And it also works with user-defined streams::
     Read the `Streams`_ documentation to learn how to create your own streams.
 
 Files or Directories
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 By default, the Finder returns files and directories; but the
 :method:`Symfony\\Component\\Finder\\Finder::files` and
@@ -160,10 +187,6 @@ The ``notName()`` method excludes files matching a pattern::
 File Contents
 ~~~~~~~~~~~~~
 
-.. versionadded:: 2.1
-   Methods ``contains()`` and ``notContains()`` have been
-   introduced in version 2.1.
-
 Restrict files by contents with the
 :method:`Symfony\\Component\\Finder\\Finder::contains` method::
 
@@ -176,6 +199,33 @@ The ``contains()`` method accepts strings or regexes::
 The ``notContains()`` method excludes files containing given pattern::
 
     $finder->files()->notContains('dolor sit amet');
+
+Path
+~~~~
+
+Restrict files and directories by path with the
+:method:`Symfony\\Component\\Finder\\Finder::path` method::
+
+    $finder->path('some/special/dir');
+
+On all platforms slash (i.e. ``/``) should be used as the directory separator.
+
+The ``path()`` method accepts a string or a regular expression::
+
+    $finder->path('foo/bar');
+    $finder->path('/^foo\/bar/');
+
+Internally, strings are converted into regular expressions by escaping slashes
+and adding delimiters:
+
+.. code-block:: text
+
+    dirname    ===>    /dirname/
+    a/b/c      ===>    /a\/b\/c/
+
+The :method:`Symfony\\Component\\Finder\\Finder::notPath` method excludes files by path::
+
+    $finder->notPath('other/dir');
 
 File Size
 ~~~~~~~~~
@@ -192,9 +242,6 @@ Restrict by a size range by chaining calls::
 The comparison operator can be any of the following: ``>``, ``>=``, ``<``, ``<=``,
 ``==``, ``!=``.
 
-.. versionadded:: 2.1
-   The operator ``!=`` was added in version 2.1.
-
 The target value may use magnitudes of kilobytes (``k``, ``ki``), megabytes
 (``m``, ``mi``), or gigabytes (``g``, ``gi``). Those suffixed with an ``i`` use
 the appropriate ``2**n`` version in accordance with the `IEC standard`_.
@@ -207,8 +254,8 @@ Restrict files by last modified dates with the
 
     $finder->date('since yesterday');
 
-The comparison operator can be any of the following: ``>``, ``>=``, ``<``, '<=',
-'=='. You can also use ``since`` or ``after`` as an alias for ``>``, and
+The comparison operator can be any of the following: ``>``, ``>=``, ``<``, ``<=``,
+``==``. You can also use ``since`` or ``after`` as an alias for ``>``, and
 ``until`` or ``before`` as an alias for ``<``.
 
 The target value can be any date supported by the `strtotime`_ function.
@@ -242,11 +289,8 @@ it is called with the file as a :class:`Symfony\\Component\\Finder\\SplFileInfo`
 instance. The file is excluded from the result set if the Closure returns
 ``false``.
 
-Reading contents of returned files
+Reading Contents of Returned Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 2.1
-   Method ``getContents()`` have been introduced in version 2.1.
 
 The contents of returned files can be read with
 :method:`Symfony\\Component\\Finder\\SplFileInfo::getContents`::
@@ -258,11 +302,12 @@ The contents of returned files can be read with
 
     foreach ($finder as $file) {
         $contents = $file->getContents();
-        ...
+        
+        // ...
     }
 
-.. _strtotime:   http://www.php.net/manual/en/datetime.formats.php
-.. _Iterator:     http://www.php.net/manual/en/spl.iterators.php
+.. _strtotime:    http://www.php.net/manual/en/datetime.formats.php
 .. _protocol:     http://www.php.net/manual/en/wrappers.php
 .. _Streams:      http://www.php.net/streams
 .. _IEC standard: http://physics.nist.gov/cuu/Units/binary.html
+.. _Packagist:    https://packagist.org/packages/symfony/finder

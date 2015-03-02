@@ -1,39 +1,52 @@
 .. index::
    single: Events; Create listener
 
-How to create an Event Listener
+How to Create an Event Listener
 ===============================
 
 Symfony has various events and hooks that can be used to trigger custom
-behavior in your application. Those events are thrown by the HttpKernel 
-component and can be viewed in the :class:`Symfony\\Component\\HttpKernel\\KernelEvents` class. 
+behavior in your application. Those events are thrown by the HttpKernel
+component and can be viewed in the :class:`Symfony\\Component\\HttpKernel\\KernelEvents` class.
 
-To hook into an event and add your own custom logic, you have to  create
+To hook into an event and add your own custom logic, you have to create
 a service that will act as an event listener on that event. In this entry,
-we will create a service that will act as an Exception Listener, allowing
-us to modify how exceptions are shown by  our application. The ``KernelEvents::EXCEPTION``
+you will create a service that will act as an Exception Listener, allowing
+you to modify how exceptions are shown by your application. The ``KernelEvents::EXCEPTION``
 event is just one of the core kernel events::
 
-    // src/Acme/DemoBundle/Listener/AcmeExceptionListener.php
-    namespace Acme\DemoBundle\Listener;
+    // src/AppBundle/EventListener/AcmeExceptionListener.php
+    namespace AppBundle\EventListener;
 
     use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
     use Symfony\Component\HttpFoundation\Response;
+    use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
     class AcmeExceptionListener
     {
         public function onKernelException(GetResponseForExceptionEvent $event)
         {
-            // We get the exception object from the received event
+            // You get the exception object from the received event
             $exception = $event->getException();
-            $message = 'My Error says: ' . $exception->getMessage();
+            $message = sprintf(
+                'My Error says: %s with code: %s',
+                $exception->getMessage(),
+                $exception->getCode()
+            );
 
-            // Customize our response object to display our exception details
+            // Customize your response object to display the exception details
             $response = new Response();
             $response->setContent($message);
-            $response->setStatusCode($exception->getStatusCode());
 
-            // Send our modified response object to the event
+            // HttpExceptionInterface is a special type of exception that
+            // holds status code and header details
+            if ($exception instanceof HttpExceptionInterface) {
+                $response->setStatusCode($exception->getStatusCode());
+                $response->headers->replace($exception->getHeaders());
+            } else {
+                $response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            // Send the modified response object to the event
             $event->setResponse($response);
         }
     }
@@ -44,7 +57,13 @@ event is just one of the core kernel events::
     the ``kernel.exception`` event, it is :class:`Symfony\\Component\\HttpKernel\\Event\\GetResponseForExceptionEvent`.
     To see what type of object each event listener receives, see :class:`Symfony\\Component\\HttpKernel\\KernelEvents`.
 
-Now that the class is created, we just need to register it as a service and
+.. note::
+
+    When setting a response for the ``kernel.request``, ``kernel.view`` or
+    ``kernel.exception`` events, the propagation is stopped, so the lower
+    priority listeners on that event don't get called.
+
+Now that the class is created, you just need to register it as a service and
 notify Symfony that it is a "listener" on the ``kernel.exception`` event by
 using a special "tag":
 
@@ -52,45 +71,45 @@ using a special "tag":
 
     .. code-block:: yaml
 
-        # app/config/config.yml
+        # app/config/services.yml
         services:
             kernel.listener.your_listener_name:
-                class: Acme\DemoBundle\Listener\AcmeExceptionListener
+                class: AppBundle\EventListener\AcmeExceptionListener
                 tags:
                     - { name: kernel.event_listener, event: kernel.exception, method: onKernelException }
 
     .. code-block:: xml
 
-        <!-- app/config/config.yml -->
-        <service id="kernel.listener.your_listener_name" class="Acme\DemoBundle\Listener\AcmeExceptionListener">
+        <!-- app/config/services.xml -->
+        <service id="kernel.listener.your_listener_name" class="AppBundle\EventListener\AcmeExceptionListener">
             <tag name="kernel.event_listener" event="kernel.exception" method="onKernelException" />
         </service>
 
     .. code-block:: php
 
-        // app/config/config.yml
+        // app/config/services.php
         $container
-            ->register('kernel.listener.your_listener_name', 'Acme\DemoBundle\Listener\AcmeExceptionListener')
+            ->register('kernel.listener.your_listener_name', 'AppBundle\EventListener\AcmeExceptionListener')
             ->addTag('kernel.event_listener', array('event' => 'kernel.exception', 'method' => 'onKernelException'))
         ;
-        
+
 .. note::
 
     There is an additional tag option ``priority`` that is optional and defaults
     to 0. This value can be from -255 to 255, and the listeners will be executed
-    in the order of their priority. This is useful when you need to guarantee
-    that one listener is executed before another.
+    in the order of their priority (highest to lowest). This is useful when
+    you need to guarantee that one listener is executed before another.
 
-Request events, checking types
+Request Events, Checking Types
 ------------------------------
 
-A single page can make several requests (one mast request, and then multiple
+A single page can make several requests (one master request, and then multiple
 sub-requests), which is why when working with the ``KernelEvents::REQUEST``
 event, you might need to check the type of the request. This can be easily
 done as follow::
 
-    // src/Acme/DemoBundle/Listener/AcmeRequestListener.php
-    namespace Acme\DemoBundle\Listener;
+    // src/AppBundle/EventListener/AcmeRequestListener.php
+    namespace AppBundle\EventListener;
 
     use Symfony\Component\HttpKernel\Event\GetResponseEvent;
     use Symfony\Component\HttpKernel\HttpKernel;
@@ -99,7 +118,7 @@ done as follow::
     {
         public function onKernelRequest(GetResponseEvent $event)
         {
-            if (HttpKernel::MASTER_REQUEST != $event->getRequestType()) {
+            if (!$event->isMasterRequest()) {
                 // don't do anything if it's not the master request
                 return;
             }
@@ -113,3 +132,23 @@ done as follow::
     Two types of request are available in the :class:`Symfony\\Component\\HttpKernel\\HttpKernelInterface`
     interface: ``HttpKernelInterface::MASTER_REQUEST`` and
     ``HttpKernelInterface::SUB_REQUEST``.
+
+Debugging Event Listeners
+-------------------------
+
+.. versionadded:: 2.6
+    The ``debug:event-dispatcher`` command was introduced in Symfony 2.6.
+
+You can find out what listeners are registered in the event dispatcher
+using the console. To show all events and their listeners, run:
+
+.. code-block:: bash
+
+    $ php app/console debug:event-dispatcher
+
+You can get registered listeners for a particular event by specifying
+its name:
+
+.. code-block:: bash
+
+    $ php app/console debug:event-dispatcher kernel.exception

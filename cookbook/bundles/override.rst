@@ -11,18 +11,19 @@ Templates
 ---------
 
 For information on overriding templates, see
+
 * :ref:`overriding-bundle-templates`.
 * :doc:`/cookbook/bundles/inheritance`
 
 Routing
 -------
 
-Routing is never automatically imported in Symfony2. If you want to include
+Routing is never automatically imported in Symfony. If you want to include
 the routes from any bundle, then they must be manually imported from somewhere
 in your application (e.g. ``app/config/routing.yml``).
 
 The easiest way to "override" a bundle's routing is to never import it at
-all. Instead of importing a third-party bundle's routing, simply copying
+all. Instead of importing a third-party bundle's routing, simply copy
 that routing file into your application, modify it, and import it instead.
 
 Controllers
@@ -31,6 +32,7 @@ Controllers
 Assuming the third-party bundle involved uses non-service controllers (which
 is almost always the case), you can easily override controllers via bundle
 inheritance. For more information, see :doc:`/cookbook/bundles/inheritance`.
+If the controller is a service, see the next section on how to override it.
 
 Services & Configuration
 ------------------------
@@ -51,7 +53,7 @@ in the core FrameworkBundle:
 
         # app/config/config.yml
         parameters:
-            translator.class:      Acme\HelloBundle\Translation\Translator
+            translator.class: Acme\HelloBundle\Translation\Translator
 
     .. code-block:: xml
 
@@ -66,10 +68,10 @@ in the core FrameworkBundle:
         $container->setParameter('translator.class', 'Acme\HelloBundle\Translation\Translator');
 
 Secondly, if the class is not available as a parameter, you want to make sure the
-class is always overridden when your bundle is used, or you need to modify
+class is always overridden when your bundle is used or if you need to modify
 something beyond just the class name, you should use a compiler pass::
 
-    // src/Acme/FooBundle/DependencyInjection/Compiler/OverrideServiceCompilerPass.php
+    // src/Acme/DemoBundle/DependencyInjection/Compiler/OverrideServiceCompilerPass.php
     namespace Acme\DemoBundle\DependencyInjection\Compiler;
 
     use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -84,23 +86,27 @@ something beyond just the class name, you should use a compiler pass::
         }
     }
 
-In this example we fetch the service definition of the original service, and set
-its class name to our own class.
+In this example you fetch the service definition of the original service, and set
+its class name to your own class.
 
 See :doc:`/cookbook/service_container/compiler_passes` for information on how to use
 compiler passes. If you want to do something beyond just overriding the class -
 like adding a method call - you can only use the compiler pass method.
 
-Entities & Entity mapping
+Entities & Entity Mapping
 -------------------------
 
-In progress...
+Due to the way Doctrine works, it is not possible to override entity mapping
+of a bundle. However, if a bundle provides a mapped superclass (such as the
+``User`` entity in the FOSUserBundle) one can override attributes and
+associations. Learn more about this feature and its limitations in
+`the Doctrine documentation`_.
 
 Forms
 -----
 
 In order to override a form type, it has to be registered as a service (meaning
-it is tagged as "form.type"). You can then override it as you would override any
+it is tagged as ``form.type``). You can then override it as you would override any
 service as explained in `Services & Configuration`_. This, of course, will only
 work if the type is referred to by its alias rather than being instantiated,
 e.g.::
@@ -111,12 +117,82 @@ rather than::
 
     $builder->add('name', new CustomType());
 
-Validation metadata
+.. _override-validation:
+
+Validation Metadata
 -------------------
 
-In progress...
+Symfony loads all validation configuration files from every bundle and
+combines them into one validation metadata tree. This means you are able to
+add new constraints to a property, but you cannot override them.
+
+To override this, the 3rd party bundle needs to have configuration for
+:ref:`validation groups <book-validation-validation-groups>`. For instance,
+the FOSUserBundle has this configuration. To create your own validation, add
+the constraints to a new validation group:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/UserBundle/Resources/config/validation.yml
+        FOS\UserBundle\Model\User:
+            properties:
+                plainPassword:
+                    - NotBlank:
+                        groups: [AcmeValidation]
+                    - Length:
+                        min: 6
+                        minMessage: fos_user.password.short
+                        groups: [AcmeValidation]
+
+    .. code-block:: xml
+
+        <!-- src/Acme/UserBundle/Resources/config/validation.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <constraint-mapping xmlns="http://symfony.com/schema/dic/constraint-mapping"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/constraint-mapping
+                http://symfony.com/schema/dic/constraint-mapping/constraint-mapping-1.0.xsd">
+
+            <class name="FOS\UserBundle\Model\User">
+                <property name="plainPassword">
+                    <constraint name="NotBlank">
+                        <option name="groups">
+                            <value>AcmeValidation</value>
+                        </option>
+                    </constraint>
+
+                    <constraint name="Length">
+                        <option name="min">6</option>
+                        <option name="minMessage">fos_user.password.short</option>
+                        <option name="groups">
+                            <value>AcmeValidation</value>
+                        </option>
+                    </constraint>
+                </property>
+            </class>
+        </constraint-mapping>
+
+Now, update the FOSUserBundle configuration, so it uses your validation groups
+instead of the original ones.
+
+.. _override-translations:
 
 Translations
 ------------
 
-In progress...
+Translations are not related to bundles, but to domains. That means that you
+can override the translations from any translation file, as long as it is in
+:ref:`the correct domain <using-message-domains>`.
+
+.. caution::
+
+    The last translation file always wins. That means that you need to make
+    sure that the bundle containing *your* translations is loaded after any
+    bundle whose translations you're overriding. This is done in ``AppKernel``.
+
+    The file that always wins is the one that is placed in
+    ``app/Resources/translations``, as those files are always loaded last.
+
+.. _`the Doctrine documentation`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/inheritance-mapping.html#overrides

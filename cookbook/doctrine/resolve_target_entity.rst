@@ -1,9 +1,9 @@
-Defining Relationships with Abstract Classes and Interfaces
-===========================================================
+.. index::
+   single: Doctrine; Resolving target entities
+   single: Doctrine; Define relationships with abstract classes and interfaces
 
-.. versionadded: 2.1
-    The ResolveTargetEntityListener is new to Doctrine 2.2, which was first
-    packaged with Symfony 2.1.
+How to Define Relationships with Abstract Classes and Interfaces
+================================================================
 
 One of the goals of bundles is to create discreet bundles of functionality
 that do not have many (if any) dependencies, allowing you to use that
@@ -34,8 +34,8 @@ with a real object that implements that interface.
 Set up
 ------
 
-Let's use the following basic entities (which are incomplete for brevity)
-to explain how to set up and use the RTEL.
+This article uses the following two basic entities (which are incomplete for
+brevity) to explain how to set up and use the ``ResolveTargetEntityListener``.
 
 A Customer entity::
 
@@ -53,7 +53,7 @@ A Customer entity::
      */
     class Customer extends BaseCustomer implements InvoiceSubjectInterface
     {
-        // In our example, any methods defined in the InvoiceSubjectInterface
+        // In this example, any methods defined in the InvoiceSubjectInterface
         // are already implemented in the BaseCustomer
     }
 
@@ -114,9 +114,9 @@ about the replacement:
 
         # app/config/config.yml
         doctrine:
-            # ....
+            # ...
             orm:
-                # ....
+                # ...
                 resolve_target_entities:
                     Acme\InvoiceBundle\Model\InvoiceSubjectInterface: Acme\AppBundle\Entity\Customer
 
@@ -132,7 +132,7 @@ about the replacement:
             <doctrine:config>
                 <doctrine:orm>
                     <!-- ... -->
-                    <doctrine:resolve-target-entity interface="Acme\InvoiceBundle\Model\InvoiceSubjectInterface">Acme\AppBundle\Entity\Customer</resolve-target-entity>
+                    <doctrine:resolve-target-entity interface="Acme\InvoiceBundle\Model\InvoiceSubjectInterface">Acme\AppBundle\Entity\Customer</doctrine:resolve-target-entity>
                 </doctrine:orm>
             </doctrine:config>
         </container>

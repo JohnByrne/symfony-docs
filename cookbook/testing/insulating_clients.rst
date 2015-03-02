@@ -1,11 +1,13 @@
 .. index::
    single: Tests; Insulating clients
 
-How to test the Interaction of several Clients
+How to Test the Interaction of several Clients
 ==============================================
 
-If you need to simulate an interaction between different Clients (think of a
-chat for instance), create several Clients::
+If you need to simulate an interaction between different clients (think of a
+chat for instance), create several clients::
+
+    // ...
 
     $harry = static::createClient();
     $sally = static::createClient();
@@ -13,12 +15,14 @@ chat for instance), create several Clients::
     $harry->request('POST', '/say/sally/Hello');
     $sally->request('GET', '/messages');
 
-    $this->assertEquals(201, $harry->getResponse()->getStatusCode());
+    $this->assertEquals(Response::HTTP_CREATED, $harry->getResponse()->getStatusCode());
     $this->assertRegExp('/Hello/', $sally->getResponse()->getContent());
 
 This works except when your code maintains a global state or if it depends on
 a third-party library that has some kind of global state. In such a case, you
 can insulate your clients::
+
+    // ...
 
     $harry = static::createClient();
     $sally = static::createClient();
@@ -29,7 +33,7 @@ can insulate your clients::
     $harry->request('POST', '/say/sally/Hello');
     $sally->request('GET', '/messages');
 
-    $this->assertEquals(201, $harry->getResponse()->getStatusCode());
+    $this->assertEquals(Response::HTTP_CREATED, $harry->getResponse()->getStatusCode());
     $this->assertRegExp('/Hello/', $sally->getResponse()->getContent());
 
 Insulated clients transparently execute their requests in a dedicated and

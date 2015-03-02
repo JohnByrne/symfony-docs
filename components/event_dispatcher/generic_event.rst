@@ -1,15 +1,12 @@
 .. index::
-   single: Event Dispatcher
+   single: EventDispatcher
 
 The Generic Event Object
 ========================
 
-.. versionadded:: 2.1
-    The ``GenericEvent`` event class was added in Symfony 2.1
-
 The base :class:`Symfony\\Component\\EventDispatcher\\Event` class provided by the
-``Event Dispatcher`` component is deliberately sparse to allow the creation of
-API specific event objects by inheritance using OOP. This allow for elegant and
+EventDispatcher component is deliberately sparse to allow the creation of
+API specific event objects by inheritance using OOP. This allows for elegant and
 readable code in complex applications.
 
 The :class:`Symfony\\Component\\EventDispatcher\\GenericEvent` is available
@@ -28,19 +25,19 @@ addition to the base class :class:`Symfony\\Component\\EventDispatcher\\Event`
 * :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::getSubject`:
   Get the subject;
 
-* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::setArg`:
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::setArgument`:
   Sets an argument by key;
 
-* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::setArgs`:
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::setArguments`:
   Sets arguments array;
 
-* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::getArg`:
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::getArgument`:
   Gets an argument by key;
 
-* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::getArgs`:
-  Gets an array of argument;
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::getArguments`:
+  Getter for all arguments;
 
-* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::hasArg`:
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::hasArgument`:
   Returns true if the argument key exists;
 
 The ``GenericEvent`` also implements :phpclass:`ArrayAccess` on the event
@@ -54,7 +51,7 @@ Simply passing a subject::
 
     use Symfony\Component\EventDispatcher\GenericEvent;
 
-    $event = GenericEvent($subject);
+    $event = new GenericEvent($subject);
     $dispatcher->dispatch('foo', $event);
 
     class FooListener
@@ -72,7 +69,10 @@ the event arguments::
 
     use Symfony\Component\EventDispatcher\GenericEvent;
 
-    $event = new GenericEvent($subject, array('type' => 'foo', 'counter' => 0)));
+    $event = new GenericEvent(
+        $subject,
+        array('type' => 'foo', 'counter' => 0)
+    );
     $dispatcher->dispatch('foo', $event);
 
     echo $event['counter'];
@@ -93,7 +93,7 @@ Filtering data::
 
     use Symfony\Component\EventDispatcher\GenericEvent;
 
-    $event = new GenericEvent($subject, array('data' => 'foo'));
+    $event = new GenericEvent($subject, array('data' => 'Foo'));
     $dispatcher->dispatch('foo', $event);
 
     echo $event['data'];
@@ -102,6 +102,6 @@ Filtering data::
     {
         public function filter(GenericEvent $event)
         {
-            strtolower($event['data']);
+            $event['data'] = strtolower($event['data']);
         }
     }

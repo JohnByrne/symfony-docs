@@ -1,19 +1,17 @@
 .. index::
-   single: Event Dispatcher; Container Aware; Dependency Injection; DIC
+   single: EventDispatcher; Service container aware
 
 The Container Aware Event Dispatcher
 ====================================
-
-.. versionadded:: 2.1
-    This feature was moved into the EventDispatcher component in Symfony 2.1.
 
 Introduction
 ------------
 
 The :class:`Symfony\\Component\\EventDispatcher\\ContainerAwareEventDispatcher` is
-a special event dispatcher implementation which is coupled to the Symfony2
-Dependency Injection Container Component (DIC). It allows DIC services to be
-specified as event listeners making the event dispatcher extremely powerful.
+a special EventDispatcher implementation which is coupled to the service container
+that is part of :doc:`the DependencyInjection component </components/dependency_injection/introduction>`.
+It allows services to be specified as event listeners making the EventDispatcher
+extremely powerful.
 
 Services are lazy loaded meaning the services attached as listeners will only be
 created if an event is dispatched that requires those listeners.
@@ -33,15 +31,15 @@ into the :class:`Symfony\\Component\\EventDispatcher\\ContainerAwareEventDispatc
 Adding Listeners
 ----------------
 
-The *Container Aware Event Dispatcher* can either load specified services
+The *Container Aware EventDispatcher* can either load specified services
 directly, or services that implement :class:`Symfony\\Component\\EventDispatcher\\EventSubscriberInterface`.
 
-The following examples assume the DIC has been loaded with any services that
-are mentioned.
+The following examples assume the service container has been loaded with any
+services that are mentioned.
 
 .. note::
 
-    Services must be marked as public in the DIC.
+    Services must be marked as public in the container.
 
 Adding Services
 ~~~~~~~~~~~~~~~
@@ -58,10 +56,13 @@ Adding Subscriber Services
 ``EventSubscribers`` can be added using the
 :method:`Symfony\\Component\\EventDispatcher\\ContainerAwareEventDispatcher::addSubscriberService`
 method where the first argument is the service ID of the subscriber service,
-and the second argument is the the service's class name (which must implement
+and the second argument is the service's class name (which must implement
 :class:`Symfony\\Component\\EventDispatcher\\EventSubscriberInterface`) as follows::
 
-    $dispatcher->addSubscriberService('kernel.store_subscriber', 'StoreSubscriber');
+    $dispatcher->addSubscriberService(
+        'kernel.store_subscriber',
+        'StoreSubscriber'
+    );
 
 The ``EventSubscriberInterface`` will be exactly as you would expect::
 
@@ -70,7 +71,7 @@ The ``EventSubscriberInterface`` will be exactly as you would expect::
 
     class StoreSubscriber implements EventSubscriberInterface
     {
-        static public function getSubscribedEvents()
+        public static function getSubscribedEvents()
         {
             return array(
                 'kernel.response' => array(

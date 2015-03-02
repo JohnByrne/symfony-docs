@@ -1,10 +1,10 @@
 .. index::
    single: Config; Loading resources
 
-Loading resources
+Loading Resources
 =================
 
-Locating resources
+Locating Resources
 ------------------
 
 Loading the configuration normally starts with a search for resources – in
@@ -24,10 +24,10 @@ look in this directory first. The third argument indicates whether or not the
 locator should return the first file it has found, or an array containing
 all matches.
 
-Resource loaders
+Resource Loaders
 ----------------
 
-For each type of resource (Yaml, XML, annotation, etc.) a loader must be defined.
+For each type of resource (YAML, XML, annotation, etc.) a loader must be defined.
 Each loader should implement :class:`Symfony\\Component\\Config\\Loader\\LoaderInterface`
 or extend the abstract :class:`Symfony\\Component\\Config\\Loader\\FileLoader`
 class, which allows for recursively importing other resources::
@@ -39,7 +39,7 @@ class, which allows for recursively importing other resources::
     {
         public function load($resource, $type = null)
         {
-            $configValues = Yaml::parse($resource);
+            $configValues = Yaml::parse(file_get_contents($resource));
 
             // ... handle the config values
 
@@ -50,11 +50,14 @@ class, which allows for recursively importing other resources::
 
         public function supports($resource, $type = null)
         {
-            return is_string($resource) && 'yml' === pathinfo($resource, PATHINFO_EXTENSION);
+            return is_string($resource) && 'yml' === pathinfo(
+                $resource,
+                PATHINFO_EXTENSION
+            );
         }
     }
 
-Finding the right loader
+Finding the right Loader
 ------------------------
 
 The :class:`Symfony\\Component\\Config\\Loader\\LoaderResolver` receives as
@@ -71,7 +74,7 @@ has found a suitable loader, this loader will be asked to load the resource::
     use Symfony\Component\Config\Loader\LoaderResolver;
     use Symfony\Component\Config\Loader\DelegatingLoader;
 
-    $loaderResolver = new LoaderResolver(array(new YamlUserLoader));
+    $loaderResolver = new LoaderResolver(array(new YamlUserLoader($locator)));
     $delegatingLoader = new DelegatingLoader($loaderResolver);
 
     $delegatingLoader->load(__DIR__.'/users.yml');

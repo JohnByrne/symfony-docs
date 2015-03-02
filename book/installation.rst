@@ -5,197 +5,257 @@ Installing and Configuring Symfony
 ==================================
 
 The goal of this chapter is to get you up and running with a working application
-built on top of Symfony. Fortunately, Symfony offers "distributions", which
-are functional Symfony "starter" projects that you can download and begin
-developing in immediately.
+built on top of Symfony. In order to simplify the process of creating new
+applications, Symfony provides an installer that must be installed before
+creating the first application.
 
-.. tip::
+Installing the Symfony Installer
+--------------------------------
 
-    If you're looking for instructions on how best to create a new project
-    and store it via source control, see `Using Source Control`_.
-
-Installing a Symfony2 Distribution
-----------------------------------
-
-.. tip::
-
-    First, check that you have installed and configured a Web server (such as
-    Apache) with the most recent PHP version possible (PHP 5.3.8 or newer is
-    recommended). For more information on Symfony2 requirements, see the
-    :doc:`requirements reference</reference/requirements>`. For information on
-    configuring your specific web server document root, see the following
-    documentation: `Apache`_ | `Nginx`_ .
-
-Symfony2 packages "distributions", which are fully-functional applications
-that include the Symfony2 core libraries, a selection of useful bundles, a
-sensible directory structure and some default configuration. When you download
-a Symfony2 distribution, you're downloading a functional application skeleton
-that can be used immediately to begin developing your application.
-
-
-
-Start by visiting the Symfony2 download page at `http://symfony.com/download`_.
-On this page, you'll see the *Symfony Standard Edition*, which is the main
-Symfony2 distribution. Here, you'll need to make two choices:
-
-* Download either a ``.tgz`` or ``.zip`` archive - both are equivalent, download
-  whatever you're more comfortable using;
-
-* Download the distribution with or without vendors. If you have `Git`_ installed
-  on your computer, you should download Symfony2 "without vendors", as it
-  adds a bit more flexibility when including third-party/vendor libraries.
-
-Download one of the archives somewhere under your local web server's root
-directory and unpack it. From a UNIX command line, this can be done with
-one of the following commands (replacing ``###`` with your actual filename):
-
-.. code-block:: bash
-
-    # for .tgz file
-    tar zxvf Symfony_Standard_Vendors_2.0.###.tgz
-
-    # for a .zip file
-    unzip Symfony_Standard_Vendors_2.0.###.zip
-
-When you're finished, you should have a ``Symfony/`` directory that looks
-something like this:
-
-.. code-block:: text
-
-    www/ <- your web root directory
-        Symfony/ <- the unpacked archive
-            app/
-                cache/
-                config/
-                logs/
-            src/
-                ...
-            vendor/
-                ...
-            web/
-                app.php
-                ...
-
-.. _installation-updating-vendors:
-
-Updating Vendors
-~~~~~~~~~~~~~~~~
-
-Step 1: Get `Composer`_ (The great new PHP packaging system)
-
-.. code-block:: bash
-
-    curl -s http://getcomposer.org/installer | php
-
-Make sure you download ``composer.phar`` in the same folder where
-the ``composer.json`` file is located (this is your Symfony project
-root by default).
-
-Step 2: Install vendors
-
-.. code-block:: bash
-
-    php composer.phar install
-
-This command downloads all of the necessary vendor libraries - including
-Symfony itself - into the ``vendor/`` directory.
+Using the Symfony Installer is the only recommended way to create new Symfony
+applications. This installer is a PHP application that has to be installed
+only once and then it can create any number of Symfony applications.
 
 .. note::
 
-    If you don't have ``curl`` installed, you can also just download the ``installer``
-    file manually at http://getcomposer.org/installer. Place this file into your
-    project and then run:
+    The installer requires PHP 5.4 or higher. If you still use the legacy
+    PHP 5.3 version, you cannot use the Symfony Installer. Read the
+    :ref:`book-creating-applications-without-the-installer` section to learn how
+    to proceed.
 
-    .. code-block:: bash
+Depending on your operating system, the installer must be installed in different
+ways.
 
-        php installer
-        php composer.phar install
+Linux and Mac OS X Systems
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Open your command console and execute the following three commands:
+
+.. code-block:: bash
+
+    $ curl -LsS http://symfony.com/installer > symfony.phar
+    $ sudo mv symfony.phar /usr/local/bin/symfony
+    $ chmod a+x /usr/local/bin/symfony
+
+This will create a global ``symfony`` command in your system that will be used
+to create new Symfony applications.
+
+Windows Systems
+~~~~~~~~~~~~~~~
+
+Open your command console and execute the following command:
+
+.. code-block:: bash
+
+    c:\> php -r "readfile('http://symfony.com/installer');" > symfony.phar
+
+Then, move the downloaded ``symfony.phar`` file to your projects directory and
+execute it as follows:
+
+.. code-block:: bash
+
+    c:\> move symfony.phar c:\projects
+    c:\projects\> php symfony.phar
+
+Creating the Symfony Application
+--------------------------------
+
+Once the Symfony Installer is ready, create your first Symfony application with
+the ``new`` command:
+
+.. code-block:: bash
+
+    # Linux, Mac OS X
+    $ symfony new my_project_name
+
+    # Windows
+    c:\> cd projects/
+    c:\projects\> php symfony.phar new my_project_name
+
+This command creates a new directory called ``my_project_name`` that contains a
+fresh new project based on the most recent stable Symfony version available. In
+addition, the installer checks if your system meets the technical requirements
+to execute Symfony applications. If not, you'll see the list of changes needed
+to meet those requirements.
 
 .. tip::
 
-    When running ``php composer.phar install`` or ``php composer.phar update``, composer will execute
-    post install/update commands to clear the cache and install assets. By default, the assets will be
-    copied into your ``web`` directory. To create symlinks instead of copying the assets, you
-    can add an entry in the ``extra`` node of your composer.json file with the key ``symfony-assets-install``
-    and the value ``symlink``:
+    For security reasons, all Symfony versions are digitally signed before
+    distributing them. If you want to verify the integrity of any Symfony
+    version, follow the steps `explained in this post`_.
 
-    .. code-block:: json
+Basing your Project on a Specific Symfony Version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        "extra": {
-            "symfony-app-dir": "app",
-            "symfony-web-dir": "web",
-            "symfony-assets-install": "symlink"
-        }
+If your project needs to be based on a specific Symfony version, pass the version
+number as the second argument of the ``new`` command:
 
-    When passing ``relative`` instead of ``symlink`` to symfony-assets-install, the command will generate
-    relative symlinks.
+.. code-block:: bash
 
-Configuration and Setup
-~~~~~~~~~~~~~~~~~~~~~~~
+    # Linux, Mac OS X
+    $ symfony new my_project_name 2.3.23
 
-At this point, all of the needed third-party libraries now live in the ``vendor/``
-directory. You also have a default application setup in ``app/`` and some
-sample code inside the ``src/`` directory.
+    # Windows
+    c:\projects\> php symfony.phar new my_project_name 2.3.23
 
-Symfony2 comes with a visual server configuration tester to help make sure
-your Web server and PHP are configured to use Symfony. Use the following URL
-to check your configuration:
+Read the :doc:`Symfony Release process </contributing/community/releases>`
+to better understand why there are several Symfony versions and which one
+to use for your projects.
+
+.. _book-creating-applications-without-the-installer:
+
+Creating Symfony Applications without the Installer
+---------------------------------------------------
+
+If you still use PHP 5.3, or if you can't execute the installer for any reason,
+you can create Symfony applications using the alternative installation method
+based on `Composer`_.
+
+Composer is the dependency manager used by modern PHP applications and it can
+also be used to create new applications based on the Symfony framework. If you
+don't have installed it globally, start by reading the next section.
+
+Installing Composer Globally
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Start with :doc:`installing Composer globally </cookbook/composer>`.
+
+Creating a Symfony Application with Composer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once Composer is installed on your computer, execute the ``create-project``
+command to create a new Symfony application based on its latest stable version:
+
+.. code-block:: bash
+
+    $ composer create-project symfony/framework-standard-edition my_project_name
+
+If you need to base your application on a specific Symfony version, provide that
+version as the second argument of the ``create-project`` command:
+
+.. code-block:: bash
+
+    $ composer create-project symfony/framework-standard-edition my_project_name "2.3.*"
+
+.. tip::
+
+    If your Internet connection is slow, you may think that Composer is not
+    doing anything. If that's your case, add the ``-vvv`` flag to the previous
+    command to display a detailed output of everything that Composer is doing.
+
+Running the Symfony Application
+-------------------------------
+
+Symfony leverages the internal web server provided by PHP to run applications
+while developing them. Therefore, running a Symfony application is a matter of
+browsing the project directory and executing this command:
+
+.. code-block:: bash
+
+    $ cd my_project_name/
+    $ php app/console server:run
+
+Then, open your browser and access the ``http://localhost:8000`` URL to see the
+Welcome page of Symfony:
+
+.. image:: /images/quick_tour/welcome.png
+   :align: center
+   :alt:   Symfony Welcome Page
+
+Instead of the Welcome Page, you may see a blank page or an error page.
+This is caused by a directory permission misconfiguration. There are several
+possible solutions depending on your operating system. All of them are
+explained in the :ref:`Setting up Permissions <book-installation-permissions>`
+section.
+
+.. note::
+
+    PHP's internal web server is available in PHP 5.4 or higher versions. If you
+    still use the legacy PHP 5.3 version, you'll have to configure a *virtual host*
+    in your web server.
+
+The ``server:run`` command is only suitable while developing the application. In
+order to run Symfony applications on production servers, you'll have to configure
+your `Apache`_ or `Nginx`_ web server as explained in
+:doc:`/cookbook/configuration/web_server_configuration`.
+
+When you are finished working on your Symfony application, you can stop the
+server with the ``server:stop`` command:
+
+.. code-block:: bash
+
+    $ php app/console server:stop
+
+Checking Symfony Application Configuration and Setup
+----------------------------------------------------
+
+Symfony applications come with a visual server configuration tester to show if
+your environment is ready to use Symfony. Access the following URL to check your
+configuration:
 
 .. code-block:: text
 
-    http://localhost/Symfony/web/config.php
+    http://localhost:8000/config.php
 
 If there are any issues, correct them now before moving on.
 
+.. _book-installation-permissions:
+
 .. sidebar:: Setting up Permissions
 
-    One common issue is that the ``app/cache`` and ``app/logs`` directories
-    must be writable both by the web server and the command line user. On
-    a UNIX system, if your web server user is different from your command
-    line user, you can run the following commands just once in your project
-    to ensure that permissions will be setup properly. Change ``www-data``
-    to your web server user:
+    One common issue when installing Symfony is that the ``app/cache`` and
+    ``app/logs`` directories must be writable both by the web server and the
+    command line user. On a UNIX system, if your web server user is different
+    from your command line user, you can try one of the following solutions.
 
-    **1. Using ACL on a system that supports chmod +a**
+    **1. Use the same user for the CLI and the web server**
+
+    In development environments, it is a common practice to use the same UNIX
+    user for the CLI and the web server because it avoids any of these permissions
+    issues when setting up new projects. This can be done by editing your web server
+    configuration (e.g. commonly httpd.conf or apache2.conf for Apache) and setting
+    its user to be the same as your CLI user (e.g. for Apache, update the ``User``
+    and ``Group`` values).
+
+    **2. Using ACL on a system that supports chmod +a**
 
     Many systems allow you to use the ``chmod +a`` command. Try this first,
-    and if you get an error - try the next method:
+    and if you get an error - try the next method. This uses a command to
+    try to determine your web server user and set it as ``HTTPDUSER``:
 
     .. code-block:: bash
 
-        rm -rf app/cache/*
-        rm -rf app/logs/*
+        $ rm -rf app/cache/*
+        $ rm -rf app/logs/*
 
-        sudo chmod +a "www-data allow delete,write,append,file_inherit,directory_inherit" app/cache app/logs
-        sudo chmod +a "`whoami` allow delete,write,append,file_inherit,directory_inherit" app/cache app/logs
+        $ HTTPDUSER=`ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1`
+        $ sudo chmod +a "$HTTPDUSER allow delete,write,append,file_inherit,directory_inherit" app/cache app/logs
+        $ sudo chmod +a "`whoami` allow delete,write,append,file_inherit,directory_inherit" app/cache app/logs
 
-    **2. Using Acl on a system that does not support chmod +a**
+
+    **3. Using ACL on a system that does not support chmod +a**
 
     Some systems don't support ``chmod +a``, but do support another utility
     called ``setfacl``. You may need to `enable ACL support`_ on your partition
-    and install setfacl before using it (as is the case with Ubuntu), like
-    so:
+    and install setfacl before using it (as is the case with Ubuntu). This
+    uses a command to try to determine your web server user and set it as
+    ``HTTPDUSER``:
 
     .. code-block:: bash
 
-        sudo setfacl -R -m u:www-data:rwx -m u:`whoami`:rwx app/cache app/logs
-        sudo setfacl -dR -m u:www-data:rwx -m u:`whoami`:rwx app/cache app/logs
+        $ HTTPDUSER=`ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1`
+        $ sudo setfacl -R -m u:"$HTTPDUSER":rwX -m u:`whoami`:rwX app/cache app/logs
+        $ sudo setfacl -dR -m u:"$HTTPDUSER":rwX -m u:`whoami`:rwX app/cache app/logs
 
-    Note that not all web servers run as the user ``www-data``. You have to
-    check which user the web server is being run as and put it in for ``www-data``.
-    This can be done by checking your process list to see which user is running
-    your web server processes.
+    If this doesn't work, try adding ``-n`` option.
 
-    **3. Without using ACL**
+    **4. Without using ACL**
 
-    If you don't have access to changing the ACL of the directories, you will
-    need to change the umask so that the cache and log directories will
-    be group-writable or world-writable (depending if the web server user
-    and the command line user are in the same group or not). To achieve
-    this, put the following line at the beginning of the ``app/console``,
-    ``web/app.php`` and ``web/app_dev.php`` files:
-
-    .. code-block:: php
+    If none of the previous methods work for you, change the umask so that the
+    cache and log directories will be group-writable or world-writable (depending
+    if the web server user and the command line user are in the same group or not).
+    To achieve this, put the following line at the beginning of the ``app/console``,
+    ``web/app.php`` and ``web/app_dev.php`` files::
 
         umask(0002); // This will let the permissions be 0775
 
@@ -206,62 +266,124 @@ If there are any issues, correct them now before moving on.
     Note that using the ACL is recommended when you have access to them
     on your server because changing the umask is not thread-safe.
 
-When everything is fine, click on "Go to the Welcome page" to request your
-first "real" Symfony2 webpage:
+.. _installation-updating-vendors:
 
-.. code-block:: text
+Updating Symfony Applications
+-----------------------------
 
-    http://localhost/Symfony/web/app_dev.php/
+At this point, you've created a fully-functional Symfony application in which
+you'll start to develop your own project. A Symfony application depends on
+a number of external libraries. These are downloaded into the ``vendor/`` directory
+and they are managed exclusively by Composer.
 
-Symfony2 should welcome and congratulate you for your hard work so far!
+Updating those third-party libraries frequently is a good practice to prevent bugs
+and security vulnerabilities. Execute the ``update`` Composer command to update
+them all at once:
 
-.. image:: /images/quick_tour/welcome.jpg
+.. code-block:: bash
 
-Beginning Development
----------------------
+    $ cd my_project_name/
+    $ composer update
 
-Now that you have a fully-functional Symfony2 application, you can begin
-development! Your distribution may contain some sample code - check the
-``README.rst`` file included with the distribution (open it as a text file)
-to learn about what sample code was included with your distribution and how
-you can remove it later.
+Depending on the complexity of your project, this update process can take up to
+several minutes to complete.
 
-If you're new to Symfony, join us in the ":doc:`page_creation`", where you'll
-learn how to create pages, change configuration, and do everything else you'll
-need in your new application.
+.. tip::
+
+    Symfony provides a command to check whether your project's dependencies
+    contain any know security vulnerability:
+
+    .. code-block:: bash
+
+        $ php app/console security:check
+
+    A good security practice is to execute this command regularly to be able to
+    update or replace compromised dependencies as soon as possible.
+
+.. _installing-a-symfony2-distribution:
+
+Installing a Symfony Distribution
+---------------------------------
+
+Symfony project packages "distributions", which are fully-functional applications
+that include the Symfony core libraries, a selection of useful bundles, a
+sensible directory structure and some default configuration. In fact, when you
+created a Symfony application in the previous sections, you actually downloaded the
+default distribution provided by Symfony, which is called *Symfony Standard Edition*.
+
+The *Symfony Standard Edition* is by far the most popular distribution and it's
+also the best choice for developers starting with Symfony. However, the Symfony
+Community has published other popular distributions that you may use in your
+applications:
+
+* The `Symfony CMF Standard Edition`_ is the best distribution to get started
+  with the `Symfony CMF`_ project, which is a project that makes it easier for
+  developers to add CMS functionality to applications built with the Symfony
+  framework.
+* The `Symfony REST Edition`_ shows how to build an application that provides a
+  RESTful API using the FOSRestBundle and several other related bundles.
 
 Using Source Control
 --------------------
 
-If you're using a version control system like ``Git`` or ``Subversion``, you
-can setup your version control system and begin committing your project to
-it as normal. The Symfony Standard edition *is* the starting point for your
-new project.
+If you're using a version control system like `Git`_, you can safely commit all
+your project's code. The reason is that Symfony applications already contain a
+``.gitignore`` file specially prepared for Symfony.
 
-For specific instructions on how best to setup your project to be stored
-in git, see :doc:`/cookbook/workflow/new_project_git`.
+For specific instructions on how best to set up your project to be stored
+in Git, see :doc:`/cookbook/workflow/new_project_git`.
 
-Ignoring the ``vendor/`` Directory
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Checking out a versioned Symfony Application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you've downloaded the archive *without vendors*, you can safely ignore
-the entire ``vendor/`` directory and not commit it to source control. With
-``Git``, this is done by creating and adding the following to a ``.gitignore``
-file:
+When using Composer to manage application's dependencies, it's recommended to
+ignore the entire ``vendor/`` directory before committing its code to the
+repository. This means that when checking out a Symfony application from a Git
+repository, there will be no ``vendor/`` directory and the application won't
+work out-of-the-box.
 
-.. code-block:: text
+In order to make it work, check out the Symfony application and then execute the
+``install`` Composer command to download and install all the dependencies required
+by the application:
 
-    /vendor/
+.. code-block:: bash
 
-Now, the vendor directory won't be committed to source control. This is fine
-(actually, it's great!) because when someone else clones or checks out the
-project, he/she can simply run the ``php composer.phar install`` script to
-install all the necessary project dependencies.
+    $ cd my_project_name/
+    $ composer install
 
-.. _`enable ACL support`: https://help.ubuntu.com/community/FilePermissionsACLs
-.. _`http://symfony.com/download`: http://symfony.com/download
-.. _`Git`: http://git-scm.com/
-.. _`GitHub Bootcamp`: http://help.github.com/set-up-git-redirect
+How does Composer know which specific dependencies to install? Because when a
+Symfony application is committed to a repository, the ``composer.json`` and
+``composer.lock`` files are also committed. These files tell Composer which
+dependencies (and which specific versions) to install for the application.
+
+Beginning Development
+---------------------
+
+Now that you have a fully-functional Symfony application, you can begin
+development! Your distribution may contain some sample code - check the
+``README.md`` file included with the distribution (open it as a text file)
+to learn about what sample code was included with your distribution.
+
+If you're new to Symfony, check out ":doc:`page_creation`", where you'll
+learn how to create pages, change configuration, and do everything else you'll
+need in your new application.
+
+Be sure to also check out the :doc:`Cookbook </cookbook/index>`, which contains
+a wide variety of articles about solving specific problems with Symfony.
+
+.. note::
+
+    If you want to remove the sample code from your distribution, take a look
+    at this cookbook article: ":doc:`/cookbook/bundles/remove`"
+
+.. _`explained in this post`: http://fabien.potencier.org/article/73/signing-project-releases
 .. _`Composer`: http://getcomposer.org/
+.. _`Composer download page`: https://getcomposer.org/download/
 .. _`Apache`: http://httpd.apache.org/docs/current/mod/core.html#documentroot
 .. _`Nginx`: http://wiki.nginx.org/Symfony
+.. _`enable ACL support`: https://help.ubuntu.com/community/FilePermissionsACLs
+.. _`Symfony CMF Standard Edition`: https://github.com/symfony-cmf/symfony-cmf-standard
+.. _`Symfony CMF`: http://cmf.symfony.com/
+.. _`Symfony REST Edition`: https://github.com/gimler/symfony-rest-edition
+.. _`FOSRestBundle`: https://github.com/FriendsOfSymfony/FOSRestBundle
+.. _`Git`: http://git-scm.com/

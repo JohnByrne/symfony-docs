@@ -1,11 +1,11 @@
 .. index::
    single: Twig extensions
-   
-How to write a custom Twig Extension
+
+How to Write a custom Twig Extension
 ====================================
 
 The main motivation for writing an extension is to move often used code
-into a reusable class like adding support for internationalization. 
+into a reusable class like adding support for internationalization.
 An extension can define tags, filters, tests, operators, global variables,
 functions, and node visitors.
 
@@ -15,89 +15,100 @@ your code faster.
 
 .. tip::
 
-    Before writing your own extensions, have a look at the `Twig official extension repository`_.
-    
+    Before writing your own extensions, have a look at the
+    `Twig official extension repository`_.
+
 Create the Extension Class
---------------------------    
+--------------------------
 
-To get your custom functionality you must first create a Twig Extension class. 
-As an example we will create a price filter to format a given number into price::
+.. note::
 
-    // src/Acme/DemoBundle/Twig/AcmeExtension.php
-    namespace Acme\DemoBundle\Twig;
+    This cookbook describes how to write a custom Twig extension as of
+    Twig 1.12. If you are using an older version, please read
+    `Twig extensions documentation legacy`_.
 
-    use Twig_Extension;
-    use Twig_Filter_Method;
+To get your custom functionality you must first create a Twig Extension class.
+As an example you'll create a price filter to format a given number into price::
 
-    class AcmeExtension extends Twig_Extension
+    // src/AppBundle/Twig/AppExtension.php
+    namespace AppBundle\Twig;
+
+    class AppExtension extends \Twig_Extension
     {
         public function getFilters()
         {
             return array(
-                'price' => new Twig_Filter_Method($this, 'priceFilter'),
+                new \Twig_SimpleFilter('price', array($this, 'priceFilter')),
             );
         }
 
         public function priceFilter($number, $decimals = 0, $decPoint = '.', $thousandsSep = ',')
         {
             $price = number_format($number, $decimals, $decPoint, $thousandsSep);
-            $price = '$' . $price;
+            $price = '$'.$price;
 
             return $price;
         }
 
         public function getName()
         {
-            return 'acme_extension';
+            return 'app_extension';
         }
     }
 
 .. tip::
 
-    Along with custom filters, you can also add custom `functions` and register `global variables`.    
-     
+    Along with custom filters, you can also add custom `functions` and register
+    `global variables`.
+
 Register an Extension as a Service
 ----------------------------------
 
-Now you must let Service Container know about your newly created Twig Extension:
+Now you must let the Service Container know about your newly created Twig Extension:
 
 .. configuration-block::
 
+    .. code-block:: yaml
+
+        # app/config/services.yml
+        services:
+            app.twig_extension:
+                class: AppBundle\Twig\AppExtension
+                public: false
+                tags:
+                    - { name: twig.extension }
+
     .. code-block:: xml
-        
-        <!-- src/Acme/DemoBundle/Resources/config/services.xml -->
+
+        <!-- app/config/services.xml -->
         <services>
-            <service id="acme.twig.acme_extension" class="Acme\DemoBundle\Twig\AcmeExtension">
+            <service id="app.twig_extension"
+                class="AppBundle\Twig\AppExtension"
+                public="false">
                 <tag name="twig.extension" />
             </service>
         </services>
 
-    .. code-block:: yaml
-        
-        # src/Acme/DemoBundle/Resources/config/services.yml
-        services:
-            acme.twig.acme_extension:
-                class: Acme\DemoBundle\Twig\AcmeExtension
-                tags:
-                    - { name: twig.extension }
-
     .. code-block:: php
 
-        // src/Acme/DemoBundle/Resources/config/services.php
+        // app/config/services.php
         use Symfony\Component\DependencyInjection\Definition;
 
-        $acmeDefinition = new Definition('\Acme\DemoBundle\Twig\AcmeExtension');
-        $acmeDefinition->addTag('twig.extension');
-        $container->setDefinition('acme.twig.acme_extension', $acmeDefinition);
-         
+        $container
+            ->register('app.twig_extension', '\AppBundle\Twig\AppExtension')
+            ->setPublic(false)
+            ->addTag('twig.extension');
+
 .. note::
 
-   Keep in mind that Twig Extensions are not lazily loaded. This means that 
-   there's a higher chance that you'll get a **CircularReferenceException**
-   or a **ScopeWideningInjectionException** if any services 
-   (or your Twig Extension in this case) are dependent on the request service.
-   For more information take a look at :doc:`/cookbook/service_container/scopes`.
-                
+   Keep in mind that Twig Extensions are not lazily loaded. This means that
+   there's a higher chance that you'll get a
+   :class:`Symfony\\Component\\DependencyInjection\\Exception\\ServiceCircularReferenceException`
+   or a
+   :class:`Symfony\\Component\\DependencyInjection\\Exception\\ScopeWideningInjectionException`
+   if any services (or your Twig Extension in this case) are dependent on
+   the request service. For more information take a look at :doc:`/cookbook/service_container/scopes`.
+
 Using the custom Extension
 --------------------------
 
@@ -107,20 +118,22 @@ Using your newly created Twig Extension is no different than any other:
 
     {# outputs $5,500.00 #}
     {{ '5500'|price }}
-    
+
 Passing other arguments to your filter:
 
 .. code-block:: jinja
-    
+
     {# outputs $5500,2516 #}
     {{ '5500.25155'|price(4, ',', '') }}
-    
+
 Learning further
 ----------------
-    
-For a more in-depth look into Twig Extensions, please take a look at the `Twig extensions documentation`_.
-     
-.. _`Twig official extension repository`: http://github.com/fabpot/Twig-extensions
+
+For a more in-depth look into Twig Extensions, please take a look at the
+`Twig extensions documentation`_.
+
+.. _`Twig official extension repository`: https://github.com/twigphp/Twig-extensions
 .. _`Twig extensions documentation`: http://twig.sensiolabs.org/doc/advanced.html#creating-an-extension
 .. _`global variables`: http://twig.sensiolabs.org/doc/advanced.html#id1
 .. _`functions`: http://twig.sensiolabs.org/doc/advanced.html#id2
+.. _`Twig extensions documentation legacy`: http://twig.sensiolabs.org/doc/advanced_legacy.html#creating-an-extension

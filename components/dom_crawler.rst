@@ -1,19 +1,24 @@
 .. index::
    single: DomCrawler
+   single: Components; DomCrawler
 
 The DomCrawler Component
 ========================
 
-    The DomCrawler Component eases DOM navigation for HTML and XML documents.
+    The DomCrawler component eases DOM navigation for HTML and XML documents.
+
+.. note::
+
+    While possible, the DomCrawler component is not designed for manipulation
+    of the DOM or re-dumping HTML/XML.
 
 Installation
 ------------
 
-You can install the component in many different ways:
+You can install the component in 2 different ways:
 
-* Use the official Git repository (https://github.com/symfony/DomCrawler);
-* Install it via PEAR ( `pear.symfony.com/DomCrawler`);
-* Install it via Composer (`symfony/dom-crawler` on Packagist).
+* :doc:`Install it via Composer </components/using_components>` (``symfony/dom-crawler`` on `Packagist`_);
+* Use the official Git repository (https://github.com/symfony/DomCrawler).
 
 Usage
 -----
@@ -47,6 +52,16 @@ Specialized :class:`Symfony\\Component\\DomCrawler\\Link` and
 :class:`Symfony\\Component\\DomCrawler\\Form` classes are useful for
 interacting with html links and forms as you traverse through the HTML tree.
 
+.. note::
+
+    The DomCrawler will attempt to automatically fix your HTML to match the
+    official specification. For example, if you nest a ``<p>`` tag inside
+    another ``<p>`` tag, it will be moved to be a sibling of the parent tag.
+    This is expected and is part of the HTML5 spec. But if you're getting
+    unexpected behavior, this could be a cause. And while the DomCrawler
+    isn't meant to dump content, you can see the "fixed" version of your HTML
+    by :ref:`dumping it <component-dom-crawler-dumping>`.
+
 Node Filtering
 ~~~~~~~~~~~~~~
 
@@ -58,17 +73,22 @@ Using XPath expressions is really easy::
 
     ``DOMXPath::query`` is used internally to actually perform an XPath query.
 
-Filtering is even easier if you have the ``CssSelector`` Component installed.
+Filtering is even easier if you have the CssSelector component installed.
 This allows you to use jQuery-like selectors to traverse::
 
     $crawler = $crawler->filter('body > p');
 
 Anonymous function can be used to filter with more complex criteria::
 
-    $crawler = $crawler->filter('body > p')->reduce(function ($node, $i) {
-        // filter even nodes
-        return ($i % 2) == 0;
-    });
+    use Symfony\Component\DomCrawler\Crawler;
+    // ...
+
+    $crawler = $crawler
+        ->filter('body > p')
+        ->reduce(function (Crawler $node, $i) {
+            // filter even nodes
+            return ($i % 2) == 0;
+        });
 
 To remove a node the anonymous function must return false.
 
@@ -76,6 +96,64 @@ To remove a node the anonymous function must return false.
 
     All filter methods return a new :class:`Symfony\\Component\\DomCrawler\\Crawler`
     instance with filtered content.
+
+Both the :method:`Symfony\\Component\\DomCrawler\\Crawler::filterXPath` and
+:method:`Symfony\\Component\\DomCrawler\\Crawler::filter` methods work with
+XML namespaces, which can be either automatically discovered or registered
+explicitly.
+
+Consider the XML below:
+
+.. code-block:: xml
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <entry
+        xmlns="http://www.w3.org/2005/Atom"
+        xmlns:media="http://search.yahoo.com/mrss/"
+        xmlns:yt="http://gdata.youtube.com/schemas/2007"
+    >
+        <id>tag:youtube.com,2008:video:kgZRZmEc9j4</id>
+        <yt:accessControl action="comment" permission="allowed"/>
+        <yt:accessControl action="videoRespond" permission="moderated"/>
+        <media:group>
+            <media:title type="plain">Chordates - CrashCourse Biology #24</media:title>
+            <yt:aspectRatio>widescreen</yt:aspectRatio>
+        </media:group>
+    </entry>
+
+This can be filtered with the  ``Crawler`` without needing to register namespace
+aliases both with :method:`Symfony\\Component\\DomCrawler\\Crawler::filterXPath`::
+
+    $crawler = $crawler->filterXPath('//default:entry/media:group//yt:aspectRatio');
+
+and :method:`Symfony\\Component\\DomCrawler\\Crawler::filter`::
+
+    use Symfony\Component\CssSelector\CssSelector;
+
+    CssSelector::disableHtmlExtension();
+    $crawler = $crawler->filter('default|entry media|group yt|aspectRatio');
+
+.. note::
+
+    The default namespace is registered with a prefix "default". It can be
+    changed with the
+    :method:`Symfony\\Component\\DomCrawler\\Crawler::setDefaultNamespacePrefix`
+    method.
+
+    The default namespace is removed when loading the content if it's the only
+    namespace in the document. It's done to simplify the xpath queries.
+
+Namespaces can be explicitly registered with the
+:method:`Symfony\\Component\\DomCrawler\\Crawler::registerNamespace` method::
+
+    $crawler->registerNamespace('m', 'http://search.yahoo.com/mrss/');
+    $crawler = $crawler->filterXPath('//m:group//yt:aspectRatio');
+
+.. caution::
+
+    To query XML with a CSS selector, the HTML extension needs to be disabled with
+    :method:`CssSelector::disableHtmlExtension <Symfony\\Component\\CssSelector\\CssSelector::disableHtmlExtension>`
+    to avoid converting the selector to lowercase.
 
 Node Traversing
 ~~~~~~~~~~~~~~~
@@ -111,6 +189,15 @@ Get all the child or parent nodes::
 Accessing Node Values
 ~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 2.6
+    The :method:`Symfony\\Component\\DomCrawler\\Crawler::nodeName`
+    method was introduced in Symfony 2.6.
+
+Access the node name (HTML tag name) of the first node of the current selection (eg. "p" or "div")::
+
+    // will return the node name (HTML tag name) of the first child element under <body>
+    $tag = $crawler->filterXPath('//body/*')->nodeName();
+
 Access the value of the first node of the current selection::
 
     $message = $crawler->filterXPath('//body/p')->text();
@@ -121,7 +208,10 @@ Access the attribute value of the first node of the current selection::
 
 Extract attribute and/or node values from the list of nodes::
 
-    $attributes = $crawler->filterXpath('//body/p')->extract(array('_text', 'class'));
+    $attributes = $crawler
+        ->filterXpath('//body/p')
+        ->extract(array('_text', 'class'))
+    ;
 
 .. note::
 
@@ -129,11 +219,19 @@ Extract attribute and/or node values from the list of nodes::
 
 Call an anonymous function on each node of the list::
 
-    $nodeValues = $crawler->filter('p')->each(function ($node, $i) {
-        return $node->nodeValue;
+    use Symfony\Component\DomCrawler\Crawler;
+    // ...
+
+    $nodeValues = $crawler->filter('p')->each(function (Crawler $node, $i) {
+        return $node->text();
     });
 
-The anonymous function receives the position and the node as arguments.
+.. versionadded:: 2.3
+    As seen here, in Symfony 2.3, the ``each`` and ``reduce`` Closure functions
+    are passed a ``Crawler`` as the first argument. Previously, that argument
+    was a :phpclass:`DOMNode`.
+
+The anonymous function receives the node (as a Crawler) and the position as arguments.
 The result is an array of values returned by the anonymous function calls.
 
 Adding the Content
@@ -152,6 +250,13 @@ The crawler supports multiple ways of adding the content::
     $crawler->add('<html><body /></html>');
     $crawler->add('<root><node /></root>');
 
+.. note::
+
+    When dealing with character sets other than ISO-8859-1, always add HTML
+    content using the :method:`Symfony\\Component\\DomCrawler\\Crawler::addHTMLContent`
+    method where you can specify the second parameter to be your target character
+    set.
+
 As the Crawler's implementation is based on the DOM extension, it is also able
 to interact with native :phpclass:`DOMDocument`, :phpclass:`DOMNodeList`
 and :phpclass:`DOMNode` objects:
@@ -169,17 +274,37 @@ and :phpclass:`DOMNode` objects:
     $crawler->addNode($node);
     $crawler->add($document);
 
-Form and Link support
-~~~~~~~~~~~~~~~~~~~~~
+.. _component-dom-crawler-dumping:
 
-Special treatment is given to links and forms inside the DOM tree.
+.. sidebar:: Manipulating and Dumping a ``Crawler``
+
+    These methods on the ``Crawler`` are intended to initially populate your
+    ``Crawler`` and aren't intended to be used to further manipulate a DOM
+    (though this is possible). However, since the ``Crawler`` is a set of
+    :phpclass:`DOMElement` objects, you can use any method or property available
+    on :phpclass:`DOMElement`, :phpclass:`DOMNode` or :phpclass:`DOMDocument`.
+    For example, you could get the HTML of a ``Crawler`` with something like
+    this::
+
+        $html = '';
+
+        foreach ($crawler as $domElement) {
+            $html .= $domElement->ownerDocument->saveHTML($domElement);
+        }
+
+    Or you can get the HTML of the first node using
+    :method:`Symfony\\Component\\DomCrawler\\Crawler::html`::
+
+        $html = $crawler->html();
+
+    The ``html`` method is new in Symfony 2.3.
 
 Links
-.....
+~~~~~
 
 To find a link by name (or a clickable image by its ``alt`` attribute), use
 the ``selectLink`` method on an existing crawler. This returns a Crawler
-instance with just the selected link(s). Calling ``link()`` gives us a special
+instance with just the selected link(s). Calling ``link()`` gives you a special
 :class:`Symfony\\Component\\DomCrawler\\Link` object::
 
     $linksCrawler = $crawler->selectLink('Go elsewhere...');
@@ -191,20 +316,19 @@ instance with just the selected link(s). Calling ``link()`` gives us a special
 The :class:`Symfony\\Component\\DomCrawler\\Link` object has several useful
 methods to get more information about the selected link itself::
 
-    // return the raw href value
-    $href = $link->getRawUri();
-
     // return the proper URI that can be used to make another request
     $uri = $link->getUri();
 
-The ``getUri()`` is especially useful as it cleans the ``href`` value and
-transforms it into how it should really be processed. For example, for a
-link with ``href="#foo"``, this would return the full URI of the current
-page suffixed with ``#foo``. The return from ``getUri()`` is always a full
-URI that you can act on.
+.. note::
+
+    The ``getUri()`` is especially useful as it cleans the ``href`` value and
+    transforms it into how it should really be processed. For example, for a
+    link with ``href="#foo"``, this would return the full URI of the current
+    page suffixed with ``#foo``. The return from ``getUri()`` is always a full
+    URI that you can act on.
 
 Forms
-.....
+~~~~~
 
 Special treatment is also given to forms. A ``selectButton()`` method is
 available on the Crawler which returns another Crawler that matches a button
@@ -243,7 +367,8 @@ You can virtually set and get values on the form::
     // get back an array of values - in the "flat" array like above
     $values = $form->getValues();
 
-    // returns the values like PHP would see them, where "registration" is its own array
+    // returns the values like PHP would see them,
+    // where "registration" is its own array
     $values = $form->getPhpValues();
 
 To work with multi-dimensional fields::
@@ -254,16 +379,16 @@ To work with multi-dimensional fields::
         <input name="multi[dimensional]" />
     </form>
 
-You must specify the fully qualified name of the field::
+Pass an array of values::
 
     // Set a single field
-    $form->setValue('multi[0]', 'value');
+    $form->setValues(array('multi' => array('value')));
 
     // Set multiple fields at once
-    $form->setValue('multi', array(
+    $form->setValues(array('multi' => array(
         1             => 'value',
         'dimensional' => 'an other value'
-    ));
+    )));
 
 This is great, but it gets better! The ``Form`` object allows you to interact
 with your form like a browser, selecting radio values, ticking checkboxes,
@@ -278,11 +403,14 @@ and uploading files::
     // select an option
     $form['registration[birthday][year]']->select(1984);
 
-    // select many options from a "multiple" select or checkboxes
+    // select many options from a "multiple" select
     $form['registration[interests]']->select(array('symfony', 'cookies'));
 
     // even fake a file upload
     $form['registration[photo]']->upload('/path/to/lucas.jpg');
+
+Using the Form Data
+...................
 
 What's the point of doing all of this? If you're testing internally, you
 can grab the information off of your form as if it had just been submitted
@@ -319,4 +447,22 @@ directly::
     // submit that form
     $crawler = $client->submit($form);
 
-.. _`Goutte`: https://github.com/fabpot/goutte
+.. _components-dom-crawler-invalid:
+
+Selecting Invalid Choice Values
+...............................
+
+By default, choice fields (select, radio) have internal validation activated
+to prevent you from setting invalid values. If you want to be able to set
+invalid values, you can use the  ``disableValidation()`` method on either
+the whole form or specific field(s)::
+
+    // Disable validation for a specific field
+    $form['country']->disableValidation()->select('Invalid value');
+
+    // Disable validation for the whole form
+    $form->disableValidation();
+    $form['country']->select('Invalid value');
+
+.. _`Goutte`:  https://github.com/fabpot/goutte
+.. _Packagist: https://packagist.org/packages/symfony/dom-crawler

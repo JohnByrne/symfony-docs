@@ -16,19 +16,28 @@ String Constraints
 ~~~~~~~~~~~~~~~~~~
 
 * :doc:`Email </reference/constraints/Email>`
-* :doc:`MinLength </reference/constraints/MinLength>`
-* :doc:`MaxLength </reference/constraints/MaxLength>`
-* :doc:`Size </reference/constraints/Size>`
+* :doc:`Length </reference/constraints/Length>`
 * :doc:`Url </reference/constraints/Url>`
 * :doc:`Regex </reference/constraints/Regex>`
 * :doc:`Ip </reference/constraints/Ip>`
+* :doc:`Uuid</reference/constraints/Uuid>`
 
 Number Constraints
 ~~~~~~~~~~~~~~~~~~
 
-* :doc:`Max </reference/constraints/Max>`
-* :doc:`Min </reference/constraints/Min>`
 * :doc:`Range </reference/constraints/Range>`
+
+Comparison Constraints
+~~~~~~~~~~~~~~~~~~~~~~
+
+* :doc:`EqualTo </reference/constraints/EqualTo>`
+* :doc:`NotEqualTo </reference/constraints/NotEqualTo>`
+* :doc:`IdenticalTo </reference/constraints/IdenticalTo>`
+* :doc:`NotIdenticalTo </reference/constraints/NotIdenticalTo>`
+* :doc:`LessThan </reference/constraints/LessThan>`
+* :doc:`LessThanOrEqual </reference/constraints/LessThanOrEqual>`
+* :doc:`GreaterThan </reference/constraints/GreaterThan>`
+* :doc:`GreaterThanOrEqual </reference/constraints/GreaterThanOrEqual>`
 
 Date Constraints
 ~~~~~~~~~~~~~~~~
@@ -42,11 +51,11 @@ Collection Constraints
 
 * :doc:`Choice </reference/constraints/Choice>`
 * :doc:`Collection </reference/constraints/Collection>`
+* :doc:`Count </reference/constraints/Count>`
 * :doc:`UniqueEntity </reference/constraints/UniqueEntity>`
 * :doc:`Language </reference/constraints/Language>`
 * :doc:`Locale </reference/constraints/Locale>`
 * :doc:`Country </reference/constraints/Country>`
-* :doc:`Size </reference/constraints/Size>`
 
 File Constraints
 ~~~~~~~~~~~~~~~~
@@ -54,10 +63,21 @@ File Constraints
 * :doc:`File </reference/constraints/File>`
 * :doc:`Image </reference/constraints/Image>`
 
+Financial and other Number Constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* :doc:`CardScheme </reference/constraints/CardScheme>`
+* :doc:`Currency </reference/constraints/Currency>`
+* :doc:`Luhn </reference/constraints/Luhn>`
+* :doc:`Iban </reference/constraints/Iban>`
+* :doc:`Isbn </reference/constraints/Isbn>`
+* :doc:`Issn </reference/constraints/Issn>`
+
 Other Constraints
 ~~~~~~~~~~~~~~~~~
 
 * :doc:`Callback </reference/constraints/Callback>`
+* :doc:`Expression </reference/constraints/Expression>`
 * :doc:`All </reference/constraints/All>`
 * :doc:`UserPassword </reference/constraints/UserPassword>`
 * :doc:`Valid </reference/constraints/Valid>`

@@ -1,7 +1,7 @@
 .. index::
    single: Assetic; Image optimization
 
-How to Use Assetic For Image Optimization with Twig Functions
+How to Use Assetic for Image Optimization with Twig Functions
 =============================================================
 
 Amongst its many filters, Assetic has four filters which can be used for on-the-fly
@@ -57,18 +57,19 @@ It can now be used from a template:
 
     .. code-block:: html+jinja
 
-        {% image '@AcmeFooBundle/Resources/public/images/example.jpg'
+        {% image '@AppBundle/Resources/public/images/example.jpg'
             filter='jpegoptim' output='/images/example.jpg' %}
             <img src="{{ asset_url }}" alt="Example"/>
         {% endimage %}
 
     .. code-block:: html+php
 
-        <?php foreach ($view['assetic']->images(
-            array('@AcmeFooBundle/Resources/public/images/example.jpg'),
-            array('jpegoptim')) as $url): ?>
+        <?php foreach ($view['assetic']->image(
+            array('@AppBundle/Resources/public/images/example.jpg'),
+            array('jpegoptim')
+        ) as $url): ?>
             <img src="<?php echo $view->escape($url) ?>" alt="Example"/>
-        <?php endforeach; ?>
+        <?php endforeach ?>
 
 Removing all EXIF Data
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -104,13 +105,13 @@ remove these by using the ``strip_all`` option:
         $container->loadFromExtension('assetic', array(
             'filters' => array(
                 'jpegoptim' => array(
-                    'bin' => 'path/to/jpegoptim',
+                    'bin'       => 'path/to/jpegoptim',
                     'strip_all' => 'true',
                 ),
             ),
         ));
 
-Lowering Maximum Quality
+Lowering maximum Quality
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The quality level of the JPEG is not affected by default. You can gain
@@ -151,7 +152,7 @@ image quality:
             ),
         ));
 
-Shorter syntax: Twig Function
+Shorter Syntax: Twig Function
 -----------------------------
 
 If you're using Twig, it's possible to achieve all of this with a shorter
@@ -203,7 +204,7 @@ The Twig template can now be changed to the following:
 
 .. code-block:: html+jinja
 
-    <img src="{{ jpegoptim('@AcmeFooBundle/Resources/public/images/example.jpg') }}" alt="Example"/>
+    <img src="{{ jpegoptim('@AppBundle/Resources/public/images/example.jpg') }}" alt="Example"/>
 
 You can specify the output directory in the config in the following way:
 
